@@ -1,0 +1,18 @@
+#!/bin/sh
+
+ProgDir=$(cd $(dirname "$0") && pwd)
+ProgName=$(basename "$0")
+
+Help="usage: $ProgName COMMAND ARGS...
+"
+for f in $(find $ProgDir -type f -name '*.shlib'); do
+    . $f
+done
+
+if [ $# -eq 0 ]; then
+    echo "$Help" 1>&2
+    exit 2
+fi
+
+# set -ex
+"$@"

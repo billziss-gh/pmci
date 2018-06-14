@@ -1,3 +1,5 @@
+Help="$Help
+builder_create INSTANCE_NAMES [FLAGS]..."
 builder_create()
 {
     gcloud beta compute instances create \
@@ -11,10 +13,20 @@ builder_create()
         "$@"
 }
 
-builder_build()
+Help="$Help
+builder_delete INSTANCE_NAMES [FLAGS]..."
+builder_delete()
+{
+    gcloud compute instances delete \
+        "$@"
+}
+
+Help="$Help
+builder_work"
+builder_work()
 {
     local CLONEURL COMMIT
-    eval `gcloud pubsub subscriptions pull $1 --auto-ack "--format=value(message.attributes)"`
+    eval `queue_recv workq`
 
     if [ -n "$CLONEURL" ]; then
         (
@@ -23,31 +35,55 @@ builder_build()
             cd "${repo%.*}"
 
             [ -n "$COMMIT" ] && git checkout "$COMMIT"
+            COMMIT=`git rev-parse HEAD`
 
             local os=`uname -s | tr A-Z a-z`
+            local ec=-1
             if [ -f .pmci/$os.sh ]; then
                 sh .pmci/$os.sh >/var/log/build.log 2>&1
+                ec=$?
                 gsutil \
                     -h "Content-type:text/plain" \
                     -h "Content-Disposition" \
-                    cp -a public-read /var/log/build.log gs://pmci-logs/`git rev-parse HEAD`.log
+                    cp -a public-read /var/log/build.log gs://pmci-logs/$COMMIT.log
             fi
+
+            queue_post doneq "CLONEURL=$CLONEURL,COMMIT=$COMMIT,EC=$ec"
         )
     fi
 }
 
+Help="$Help
+queue_create QUEUE_NAME"
 queue_create()
 {
     gcloud pubsub topics create $1
     gcloud pubsub subscriptions create --topic $1 $1
 }
 
-queue_post()
+Help="$Help
+queue_delete QUEUE_NAME"
+queue_delete()
 {
-    gcloud pubsub topics publish $1 --attribute=CLONEURL=$2,COMMIT=$3
+    gcloud pubsub topics delete $1
+    gcloud pubsub subscriptions delete $1
 }
 
+Help="$Help
+queue_post QUEUE_NAME NAME=VALUE[,...]"
+queue_post()
+{
+    gcloud pubsub topics publish $1 "--attribute=$2"
+}
+
+Help="$Help
+queue_recv QUEUE_NAME"
 queue_recv()
 {
     gcloud pubsub subscriptions pull $1 --auto-ack "--format=value(message.attributes)"
+}
+
+version()
+{
+    echo "0.9"
 }
