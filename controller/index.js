@@ -12,9 +12,14 @@
  * - scheduler: A Background Retry Function that listens for acptq messages. When it receives one
  *   it attempts to pull a free builder instance from poolq and if successful it starts that
  *   instance and publishes the received message to workq. In this case the message is not retried.
+ * - completer: A Background Retry Function that listens for doneq messages (posted by builders).
+ *   When it receives one it posts a GitHub commit status update.
+ *
+ * Builders are not part of the controller. They pull messages from the workq, perform the work
+ * described and then post messages in the doneq and delete themselves
  */
 
-const compute = require('@google-cloud/compute')
+const compute = require("@google-cloud/compute")
 const pubsub = require("@google-cloud/pubsub")
 
 const zone = new compute().zone("${ZONE}")
@@ -38,6 +43,7 @@ exports.listener = (req, rsp) =>
         return
     }
 
+    // post event to acptq
     attributes =
     {
         clone_url: req.body.repository.clone_url,
@@ -57,6 +63,7 @@ exports.listener = (req, rsp) =>
 
 exports.scheduler = (evt) =>
 {
+    // received message from acptq
     message = evt.data
 
     if (message.attributes === undefined ||
@@ -67,6 +74,7 @@ exports.scheduler = (evt) =>
         return Promise.resolve()
     }
 
+    // pull instance from poolq
     return queue_recv(poolq).
         then(responses =>
         {
@@ -85,15 +93,22 @@ exports.scheduler = (evt) =>
                 return Promise.reject()
             }
 
+            // post message to workq
             return queue_post(workq, message.attributes).
                 then(_ =>
                 {
+                    // create builder instance
                     return zone.createVM(message.attributes["instance"], vmconf)
+                })
+                .then(_ =>
+                {
+                    // acknowledge poolq message
+                    return queue_ack(poolq, ack_id)
                 })
         })
 }
 
-exports.verifier = (evt) =>
+exports.completer = (evt) =>
 {
     message = evt.data
 
@@ -132,4 +147,14 @@ function queue_recv(topic)
         returnImmediately: true,
     }
     return subcli.pull(request)
+}
+
+function queue_recv(topic, ackId)
+{
+    request =
+    {
+        subscription: subcli.topicPath(project, topic),
+        ackIds: [ackId],
+    }
+    return subcli.acknowledge(request)
 }
