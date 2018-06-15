@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# pmci
+#
+# Copyright 2018 Bill Zissimopoulos
+
 ProgDir=$(cd $(dirname "$0") && pwd)
 ProgName=$(basename "$0")
 

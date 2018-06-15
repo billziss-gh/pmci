@@ -1,3 +1,7 @@
+# shared.shlib
+#
+# Copyright 2018 Bill Zissimopoulos
+
 Help="$Help
 builder_create INSTANCE_NAMES [FLAGS]..."
 builder_create()

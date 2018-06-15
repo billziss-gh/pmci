@@ -1,4 +1,6 @@
 # freebsd.startx
+#
+# Copyright 2018 Bill Zissimopoulos
 
 exec >>/var/log/startx.log
 exec 2>&1
