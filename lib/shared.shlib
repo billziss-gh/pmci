@@ -25,17 +25,17 @@ Help="$Help
 builder_work"
 builder_work()
 {
-    local CLONEURL COMMIT
+    local clone_url commit
     eval `queue_recv workq`
 
-    if [ -n "$CLONEURL" ]; then
+    if [ -n "$clone_url" ]; then
         (
-            git clone --depth 50 "$CLONEURL"
-            local repo=`basename "$CLONEURL"`
+            git clone --depth 50 "$clone_url"
+            local repo=`basename "$clone_url"`
             cd "${repo%.*}"
 
-            [ -n "$COMMIT" ] && git checkout "$COMMIT"
-            COMMIT=`git rev-parse HEAD`
+            [ -n "$commit" ] && git checkout "$commit"
+            commit=`git rev-parse HEAD`
 
             local os=`uname -s | tr A-Z a-z`
             local ec=-1
@@ -45,10 +45,10 @@ builder_work()
                 gsutil \
                     -h "Content-type:text/plain" \
                     -h "Content-Disposition" \
-                    cp -a public-read /var/log/build.log gs://pmci-logs/$COMMIT.log
+                    cp -a public-read /var/log/build.log gs://pmci-logs/$commit.log
             fi
 
-            queue_post doneq "CLONEURL=$CLONEURL,COMMIT=$COMMIT,EC=$ec"
+            queue_post doneq "clone_url=$clone_url,commit=$commit,ec=$ec"
         )
     fi
 }
