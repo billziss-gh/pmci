@@ -1,3 +1,6 @@
 cd $(dirname "$0")
-mkdir -p functions-emulator
-npm install --prefix functions-emulator @google-cloud/functions-emulator
+
+if [ ! -d functions-emulator ]; then
+    mkdir functions-emulator
+    npm install --prefix functions-emulator @google-cloud/functions-emulator
+fi
