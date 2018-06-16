@@ -8,7 +8,7 @@
 # in the License.txt file at the root of this project.
 
 Help="$Help
-deploy"
+deploy # deploy to Google Cloud"
 deploy()
 {
     queue_create freebsd-acptq 300
@@ -18,11 +18,26 @@ deploy()
 }
 
 Help="$Help
-undeploy"
+undeploy # undeploy from Google Cloud"
 undeploy()
 {
     queue_delete poolq
     queue_delete freebsd-acptq
     queue_delete freebsd-workq
     queue_delete freebsd-doneq
+}
+
+Help="$Help
+generate # generate required files"
+generate()
+{
+    FREEBSD_STARTX=$(cat \
+        "$ProgDir/lib/config.shlib" \
+        "$ProgDir/lib/shared.shlib" \
+        "$ProgDir/builder/freebsd.startx" \
+    )
+    config_json FREEBSD_STARTX \
+        <"$ProgDir/controller/package.json" \
+        >"$ProgDir/controller/package.json.new"
+    mv "$ProgDir/controller/package.json.new" "$ProgDir/controller/package.json"
 }

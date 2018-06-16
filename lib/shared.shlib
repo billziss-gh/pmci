@@ -14,7 +14,7 @@ builder_create()
     gcloud beta compute instances create \
         --machine-type="$BUILDER_MACHINE_TYPE" \
         --min-cpu-platform="$BUILDER_MIN_CPU_PLATFORM" \
-        --boot-disk-size="$BUILDER_BOOT_DISK_SIZE" \
+        --boot-disk-size="${BUILDER_BOOT_DISK_SIZE}GB" \
         --network-tier=PREMIUM \
         --subnet=default \
         --maintenance-policy=MIGRATE \
@@ -73,6 +73,28 @@ builder_work()
                 "instance=$(builder_name),clone_url=$clone_url,commit=$commit,ec=$ec"
         )
     fi
+}
+
+Help="$Help
+function_deploy_http NAME ..."
+function_deploy_http()
+{
+    gcloud functions deploy --trigger-http "$@"
+}
+
+Help="$Help
+function_deploy_queue QUEUE_NAME NAME ..."
+function_deploy_queue()
+{
+    local queue_name=$1; shift
+    gcloud functions deploy --trigger-topic=$queue_name --retry "$@"
+}
+
+Help="$Help
+function_delete NAME ..."
+function_delete()
+{
+    gcloud functions delete "$@"
 }
 
 Help="$Help

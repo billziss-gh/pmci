@@ -8,10 +8,36 @@
 # in the License.txt file at the root of this project.
 
 PROJECT="poor-mans-ci"
-
 BUILDER_ZONE="us-central1-c"
 BUILDER_MACHINE_TYPE="f1-micro"
 BUILDER_MIN_CPU_PLATFORM="Intel Skylake"
-BUILDER_BOOT_DISK_SIZE="30GB"
-
+BUILDER_BOOT_DISK_SIZE="30"
 STORAGE_BUCKET_LOGS="pmci-logs"
+
+Help="$Help
+config_json VARIABLES... # read stdin as JSON and update 'config' entry"
+config_json()
+{
+    (
+        set -- \
+            PROJECT \
+            BUILDER_ZONE \
+            BUILDER_MACHINE_TYPE \
+            BUILDER_MIN_CPU_PLATFORM \
+            BUILDER_BOOT_DISK_SIZE \
+            STORAGE_BUCKET_LOGS \
+            "$@"
+        for k in "$@"; do
+            eval v="\$$k"
+            export $k="$v"
+        done
+        python -c '
+import json, os, sys
+obj = json.load(sys.stdin)
+cfg = obj.setdefault("config", {})
+for k in sys.argv[1:]:
+    cfg[k] = os.environ.get(k, "")
+json.dump(obj, sys.stdout, sort_keys=True, indent=4, separators=(",", ": "))
+' "$@"
+    )
+}

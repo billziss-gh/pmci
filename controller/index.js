@@ -25,16 +25,17 @@
  * described and then post messages in the doneq and delete themselves.
  */
 
+const package = require("./package.json")
 const compute = require("@google-cloud/compute")
 const pubsub = require("@google-cloud/pubsub")
 
-const zone = new compute().zone("${BUILDER_ZONE}")
+const zone = new compute().zone(package.config.BUILDER_ZONE)
 const vmconf =
 {
     "freebsd":
     {
-        "machineType": "${BUILDER_MACHINE_TYPE}",
-        "minCpuPlatform": "${BUILDER_MIN_CPU_PLATFORM}",
+        "machineType": package.config.BUILDER_MACHINE_TYPE,
+        "minCpuPlatform": package.config.BUILDER_MIN_CPU_PLATFORM,
         "disks":
         [
             {
@@ -42,7 +43,7 @@ const vmconf =
                 "initializeParams":
                 {
                     "sourceImage": "freebsd-org-cloud-dev/freebsd-11-1-release-amd64",
-                    "diskSizeGb": "30",
+                    "diskSizeGb": package.config.BUILDER_DISK_SIZE,
                 },
                 "autoDelete": true,
             }
@@ -52,7 +53,7 @@ const vmconf =
             "items":
             {
                 "key": "startup-script",
-                "value": "${STARTX}",
+                "value": package.config.FREEBSD_STARTX,
             },
         },
     },
@@ -60,7 +61,7 @@ const vmconf =
 
 const pubcli = new pubsub.v1.PublisherClient()
 const subcli = new pubsub.v1.SubscriberClient()
-const project = "${PROJECT}"
+const project = package.config.PROJECT
 
 exports.listener = (req, rsp) =>
 {
