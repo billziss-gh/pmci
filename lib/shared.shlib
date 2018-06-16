@@ -30,7 +30,7 @@ builder_work"
 builder_work()
 {
     local clone_url commit
-    eval `queue_recv workq`
+    eval `queue_recv freebsd-workq`
 
     if [ -n "$clone_url" ]; then
         (
@@ -52,17 +52,17 @@ builder_work()
                     cp -a public-read /var/log/build.log gs://pmci-logs/$commit.log
             fi
 
-            queue_post doneq "clone_url=$clone_url,commit=$commit,ec=$ec"
+            queue_post freebsd-doneq "clone_url=$clone_url,commit=$commit,ec=$ec"
         )
     fi
 }
 
 Help="$Help
-queue_create QUEUE_NAME"
+queue_create QUEUE_NAME ACK_DEADLINE"
 queue_create()
 {
     gcloud pubsub topics create $1
-    gcloud pubsub subscriptions create --topic $1 $1
+    gcloud pubsub subscriptions create $1 --topic=$1 --ack-deadline=$2
 }
 
 Help="$Help

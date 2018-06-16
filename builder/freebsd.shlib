@@ -3,8 +3,8 @@
 # Copyright 2018 Bill Zissimopoulos
 
 Help="$Help
-builder_freebsd_create INSTANCE_NAMES [FLAGS]..."
-builder_freebsd_create()
+freebsd_builder_create INSTANCE_NAMES [FLAGS]..."
+freebsd_builder_create()
 {
     cat "$ProgDir/lib/shared.shlib" "$ProgDir/builder/freebsd.startx" >/tmp/startx.$$
     builder_create \

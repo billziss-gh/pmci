@@ -1,0 +1,23 @@
+# deploy.shlib
+#
+# Copyright 2018 Bill Zissimopoulos
+
+Help="$Help
+deploy"
+deploy()
+{
+    queue_create freebsd-acptq 300
+    queue_create freebsd-poolq 300
+    queue_create freebsd-workq  30
+    queue_create freebsd-doneq  30
+}
+
+Help="$Help
+undeploy"
+undeploy()
+{
+    queue_delete freebsd-acptq
+    queue_delete freebsd-poolq
+    queue_delete freebsd-workq
+    queue_delete freebsd-doneq
+}
