@@ -39,7 +39,7 @@ const poolq = "${SYSTEM}-poolq"
 const workq = "${SYSTEM}-workq"
 //const doneq = "${SYSTEM}-doneq"
 
-exports.${SYSTEM}_listener = (req, rsp) =>
+exports["${SYSTEM}_listener"] = (req, rsp) =>
 {
     // check X-Hub-Signature to ensure that GitHub is accessing us
 
@@ -69,13 +69,13 @@ exports.${SYSTEM}_listener = (req, rsp) =>
         })
 }
 
-exports.${SYSTEM}_scheduler = (evt) =>
+exports["${SYSTEM}_scheduler"] = (evt) =>
 {
     // received message from acptq
     message = evt.data
 
     if (message.attributes === undefined ||
-        message.attributes["clone_url"] === undefined)
+        message.attributes.clone_url === undefined)
     {
         // discard the erroneous message (absense of "commit" is allowed and means "latest")
         console.error("invalid acptq message")
@@ -94,7 +94,7 @@ exports.${SYSTEM}_scheduler = (evt) =>
 
             message = messages[0].message
             if (message.attributes === undefined ||
-                message.attributes["instance"] === undefined)
+                message.attributes.instance === undefined)
             {
                 // invalid poolq message: retry accepted message
                 console.error("invalid poolq message")
@@ -102,7 +102,7 @@ exports.${SYSTEM}_scheduler = (evt) =>
             }
 
             // create builder instance
-            return zone.createVM(message.attributes["instance"], vmconf).
+            return zone.createVM(message.attributes.instance, vmconf).
                 then(_ =>
                 {
                     // post message to workq
@@ -116,12 +116,12 @@ exports.${SYSTEM}_scheduler = (evt) =>
         })
 }
 
-exports.${SYSTEM}_completer = (evt) =>
+exports["${SYSTEM}_completer"] = (evt) =>
 {
     message = evt.data
 
     if (message.attributes === undefined ||
-        message.attributes["clone_url"] === undefined)
+        message.attributes.clone_url === undefined)
     {
         // discard the erroneous message (absense of "commit" is allowed and means "latest")
         console.error("invalid doneq message")
