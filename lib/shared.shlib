@@ -12,13 +12,13 @@ builder_create INSTANCE_NAMES [FLAGS]..."
 builder_create()
 {
     gcloud beta compute instances create \
-        --machine-type=f1-micro \
-        --min-cpu-platform="Intel Skylake" \
-        --boot-disk-size=30GB \
+        --machine-type="$BUILDER_MACHINE_TYPE" \
+        --min-cpu-platform="$BUILDER_MIN_CPU_PLATFORM" \
+        --boot-disk-size="$BUILDER_BOOT_DISK_SIZE" \
         --network-tier=PREMIUM \
         --subnet=default \
         --maintenance-policy=MIGRATE \
-        --scopes=default,compute-rw,storage-rw \
+        --scopes=default,storage-rw \
         "$@"
 }
 
@@ -54,7 +54,7 @@ builder_work()
                 gsutil \
                     -h "Content-type:text/plain" \
                     -h "Content-Disposition" \
-                    cp -a public-read /var/log/build.log gs://pmci-logs/$commit.log
+                    cp -a public-read /var/log/build.log gs://$STORAGE_BUCKET_LOGS/$commit.log
             fi
 
             queue_post freebsd-doneq "clone_url=$clone_url,commit=$commit,ec=$ec"

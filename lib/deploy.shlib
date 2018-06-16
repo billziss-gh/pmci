@@ -14,7 +14,7 @@ deploy()
     queue_create freebsd-acptq 300
     queue_create freebsd-poolq 300
     queue_create freebsd-workq  30
-    queue_create freebsd-doneq  30
+    queue_create freebsd-doneq 300
 }
 
 Help="$Help

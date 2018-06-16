@@ -11,7 +11,11 @@ Help="$Help
 freebsd_builder_create INSTANCE_NAMES [FLAGS]..."
 freebsd_builder_create()
 {
-    cat "$ProgDir/lib/shared.shlib" "$ProgDir/builder/freebsd.startx" >/tmp/startx.$$
+    cat \
+        "$ProgDir/lib/config.shlib" \
+        "$ProgDir/lib/shared.shlib" \
+        "$ProgDir/builder/freebsd.startx" \
+        >/tmp/startx.$$
     builder_create \
         --image-project=freebsd-org-cloud-dev \
         --image=freebsd-11-1-release-amd64 \

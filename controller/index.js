@@ -11,7 +11,7 @@
  */
 
 /*
- * The controller consists of a number of Functions:
+ * The controller consists of a number of Cloud Functions:
  *
  * - listener: An HTTP Function that listens for GitHub push events and publishes them in acptq
  *   ("accept" q).
@@ -28,7 +28,7 @@
 const compute = require("@google-cloud/compute")
 const pubsub = require("@google-cloud/pubsub")
 
-const zone = new compute().zone("${ZONE}")
+const zone = new compute().zone("${BUILDER_ZONE}")
 const vmconf = {}
 
 const pubcli = new pubsub.v1.PublisherClient()
@@ -39,7 +39,7 @@ const poolq = "${SYSTEM}-poolq"
 const workq = "${SYSTEM}-workq"
 //const doneq = "${SYSTEM}-doneq"
 
-exports.listener = (req, rsp) =>
+exports.${SYSTEM}_listener = (req, rsp) =>
 {
     // check X-Hub-Signature to ensure that GitHub is accessing us
 
@@ -69,7 +69,7 @@ exports.listener = (req, rsp) =>
         })
 }
 
-exports.scheduler = (evt) =>
+exports.${SYSTEM}_scheduler = (evt) =>
 {
     // received message from acptq
     message = evt.data
@@ -116,7 +116,7 @@ exports.scheduler = (evt) =>
         })
 }
 
-exports.completer = (evt) =>
+exports.${SYSTEM}_completer = (evt) =>
 {
     message = evt.data
 
@@ -127,6 +127,10 @@ exports.completer = (evt) =>
         console.error("invalid doneq message")
         return Promise.resolve()
     }
+
+    // delete instance
+    // repost instance to poolq
+    // update commit status on GitHub
 
     return Promise.resolve()
 }
