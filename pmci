@@ -12,14 +12,16 @@
 ProgDir=$(cd $(dirname "$0") && pwd)
 ProgName=$(basename "$0")
 
-Help="usage: $ProgName COMMAND ARGS...
-"
+Help=""
 for f in $(find $ProgDir -type f -name '*.shlib'); do
     . $f
 done
 
 if [ $# -eq 0 ]; then
-    echo "$Help" 1>&2
+    echo "usage: $ProgName COMMAND ARGS...\n" 1>&2
+    echo "$Help" | while read name desc; do
+        [ -n "$name" ] && echo "  ${name}\n    \t${desc}" 1>&2
+    done
     exit 2
 fi
 
