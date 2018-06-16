@@ -10,8 +10,8 @@
 exec >>/var/log/startx.log
 exec 2>&1
 
-echo ">>>>STARTX `date +%Y-%m-%dT%H:%M:%S%z`"
-trap 'set +ex; echo "<<<<STARTX `date +%Y-%m-%dT%H:%M:%S%z`"' EXIT
+echo ">>>>STARTX $(date +%Y-%m-%dT%H:%M:%S%z)"
+trap 'set +ex; echo "<<<<STARTX $(date +%Y-%m-%dT%H:%M:%S%z)"' EXIT
 set -ex
 
 if [ -e /firstboot ]; then
@@ -41,4 +41,6 @@ else
     mkdir -p /tmp/repo
     cd /tmp/repo
     builder_work
+
+    # builder_delete $(builder_name)
 fi

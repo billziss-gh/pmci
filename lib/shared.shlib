@@ -31,22 +31,34 @@ builder_delete()
 }
 
 Help="$Help
-builder_work"
+builder_name # works only within GCE"
+builder_name()
+{
+    if [ -x /usr/local/share/google/get_metadata_value ]; then
+        /usr/local/share/google/get_metadata_value name
+    else
+        curl http://metadata.google.internal/computeMetadata/v1/instance/name \
+            -H Metadata-Flavor:Google
+    fi
+}
+
+Help="$Help
+builder_work # works only within GCE"
 builder_work()
 {
     local clone_url commit
-    eval `queue_recv freebsd-workq`
+    eval $(queue_recv freebsd-workq)
 
     if [ -n "$clone_url" ]; then
         (
             git clone --depth 50 "$clone_url"
-            local repo=`basename "$clone_url"`
+            local repo=$(basename "$clone_url")
             cd "${repo%.*}"
 
             [ -n "$commit" ] && git checkout "$commit"
-            commit=`git rev-parse HEAD`
+            commit=$(git rev-parse HEAD)
 
-            local os=`uname -s | tr A-Z a-z`
+            local os=$(uname -s | tr A-Z a-z)
             local ec=-1
             if [ -f .pmci/$os.sh ]; then
                 sh .pmci/$os.sh >/var/log/build.log 2>&1
@@ -57,7 +69,8 @@ builder_work()
                     cp -a public-read /var/log/build.log gs://$STORAGE_BUCKET_LOGS/$commit.log
             fi
 
-            queue_post freebsd-doneq "clone_url=$clone_url,commit=$commit,ec=$ec"
+            queue_post freebsd-doneq \
+                "instance=$(builder_name),clone_url=$clone_url,commit=$commit,ec=$ec"
         )
     fi
 }
