@@ -16,10 +16,3 @@ builder_freebsd_create()
     rm -f /tmp/startx.$$
     return $ec
 }
-
-Help="$Help
-builder_freebsd_delete INSTANCE_NAMES [FLAGS]..."
-builder_freebsd_delete()
-{
-    builder_delete "$@"
-}

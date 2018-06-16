@@ -13,7 +13,7 @@ builder_create()
         --network-tier=PREMIUM \
         --subnet=default \
         --maintenance-policy=MIGRATE \
-        --scopes=default,storage-rw \
+        --scopes=default,compute-rw,storage-rw \
         "$@"
 }
 
