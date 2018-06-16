@@ -12,17 +12,17 @@ deploy"
 deploy()
 {
     queue_create freebsd-acptq 300
-    queue_create freebsd-poolq 300
     queue_create freebsd-workq  30
     queue_create freebsd-doneq 300
+    queue_create poolq 300
 }
 
 Help="$Help
 undeploy"
 undeploy()
 {
+    queue_delete poolq
     queue_delete freebsd-acptq
-    queue_delete freebsd-poolq
     queue_delete freebsd-workq
     queue_delete freebsd-doneq
 }
