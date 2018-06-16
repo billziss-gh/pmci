@@ -52,7 +52,7 @@ const vmconf =
             "items":
             {
                 "key": "startup-script",
-                "value": "",
+                "value": "${STARTX}",
             },
         },
     },
@@ -109,7 +109,8 @@ exports.scheduler = (evt) =>
         message.attributes.clone_url === undefined)
     {
         // discard the erroneous message (absense of "commit" is allowed and means "latest")
-        console.error("invalid acptq message")
+        console.error("invalid acptq message: " +
+            String(message))
         return Promise.resolve()
     }
 
@@ -176,6 +177,7 @@ exports.completer = (evt) =>
         catch(err => console.error(err))
 
     // update commit status on GitHub
+    // TODO
 
     return Promise.resolve()
 }
