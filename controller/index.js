@@ -22,7 +22,7 @@
  *   When it receives one it posts a GitHub commit status update.
  *
  * Builders are not part of the controller. They pull messages from the workq, perform the work
- * described and then post messages in the doneq and delete themselves
+ * described and then post messages in the doneq and delete themselves.
  */
 
 const compute = require("@google-cloud/compute")
