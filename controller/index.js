@@ -3,6 +3,12 @@
  *
  * Copyright 2018 Bill Zissimopoulos
  */
+/*
+ * This file is part of "Poor Man's CI".
+ *
+ * It is licensed under the BSD license. The full license text can be found
+ * in the License.txt file at the root of this project.
+ */
 
 /*
  * The controller consists of a number of Functions:
