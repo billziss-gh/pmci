@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@google-cloud/compute": "^0.10.0",
     "@google-cloud/pubsub": "^0.18.0"
   }
 }

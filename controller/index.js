@@ -28,13 +28,15 @@ const vmconf = {}
 const pubcli = new pubsub.v1.PublisherClient()
 const subcli = new pubsub.v1.SubscriberClient()
 const project = "${PROJECT}"
-const acptq = "${ACPTQ}"
-const poolq = "${POOLQ}"
-const workq = "${WORKQ}"
-const doneq = "${DONEQ}"
+const acptq = "${SYSTEM}-acptq"
+const poolq = "${SYSTEM}-poolq"
+const workq = "${SYSTEM}-workq"
+//const doneq = "${SYSTEM}-doneq"
 
 exports.listener = (req, rsp) =>
 {
+    // check X-Hub-Signature to ensure that GitHub is accessing us
+
     if (req.body.repository === undefined ||
         req.body.repository.clone_url === undefined ||
         req.body.after === undefined)
