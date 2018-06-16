@@ -93,12 +93,12 @@ exports.scheduler = (evt) =>
                 return Promise.reject()
             }
 
-            // post message to workq
-            return queue_post(workq, message.attributes).
+            // create builder instance
+            return zone.createVM(message.attributes["instance"], vmconf).
                 then(_ =>
                 {
-                    // create builder instance
-                    return zone.createVM(message.attributes["instance"], vmconf)
+                    // post message to workq
+                    return queue_post(workq, message.attributes)
                 })
                 .then(_ =>
                 {
