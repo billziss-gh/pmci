@@ -1,0 +1,37 @@
+hide footbox
+skinparam BoxPadding 40
+
+participant "<img:github.png>" as GitHub
+box "Controller"
+    participant Listener
+    participant Scheduler
+    participant Completer
+end box
+participant Pool
+
+GitHub ->> Listener: push
+activate Listener
+deactivate Listener
+loop retry delivery while\nno builder available
+    Listener ->> Scheduler: work
+    activate Scheduler
+end
+Pool ->> Scheduler: builderName
+create builder
+Scheduler -> builder: new(builderName)
+activate builder
+Scheduler ->> builder: work
+deactivate Scheduler
+builder -> builder: build\nrepo
+activate builder #Salmon
+deactivate builder
+builder ->> Completer: done(builderName)
+destroy builder
+activate Completer
+Completer ->> Pool: builderName
+Completer ->> GitHub: status
+deactivate Completer
+note over builder #Salmon
+    Salmon color:
+    CI processing.
+end note
