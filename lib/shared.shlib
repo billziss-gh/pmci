@@ -31,6 +31,24 @@ builder_delete()
 }
 
 Help="$Help
+builder_done_sink_create SINK_NAME QUEUE_NAME"
+builder_done_sink_create()
+{
+    gcloud logging sinks create $1 pubsub.googleapis.com/projects/$PROJECT/topics/$2 \
+        --log-filter 'resource.type="gce_instance"
+logName="projects/'$PROJECT'/logs/compute.googleapis.com%2Factivity_log"
+jsonPayload.event_type:"GCE_OPERATION_DONE"
+(jsonPayload.event_subtype:"compute.instances.stop" OR jsonPayload.event_subtype:"compute.instances.guestTerminate" OR jsonPayload.event_subtype:"compute.instances.delete")'
+}
+
+Help="$Help
+builder_done_sink_delete SINK_NAME"
+builder_done_sink_delete()
+{
+    gcloud logging sinks delete $1
+}
+
+Help="$Help
 builder_name # works only within GCE"
 builder_name()
 {
