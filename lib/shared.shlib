@@ -141,14 +141,14 @@ function_deploy_queue QUEUE_NAME NAME ..."
 function_deploy_queue()
 {
     local queue_name=$1; shift
-    gcloud functions deploy --trigger-topic=$queue_name --retry "$@"
+    gcloud functions deploy --trigger-topic=$queue_name "$@"
 }
 
 Help="$Help
 function_delete NAME ..."
 function_delete()
 {
-    gcloud functions delete "$@"
+    gcloud functions delete --quiet "$@"
 }
 
 Help="$Help

@@ -8,26 +8,6 @@
 # in the License.txt file at the root of this project.
 
 Help="$Help
-deploy # deploy to Google Cloud"
-deploy()
-{
-    queue_create freebsd-workq 300
-    queue_create freebsd-doneq 300
-    queue_create poolq 300
-    builder_done_sink_create freebsd-done freebsd-doneq
-}
-
-Help="$Help
-undeploy # undeploy from Google Cloud"
-undeploy()
-{
-    builder_done_sink_delete freebsd-done
-    queue_delete poolq
-    queue_delete freebsd-doneq
-    queue_delete freebsd-workq
-}
-
-Help="$Help
 generate # generate required files"
 generate()
 {
@@ -40,4 +20,41 @@ generate()
         <"$ProgDir/controller/package.json" \
         >"$ProgDir/controller/package.json.new"
     mv "$ProgDir/controller/package.json.new" "$ProgDir/controller/package.json"
+}
+
+Help="$Help
+deploy # deploy to Google Cloud"
+deploy()
+{
+    queue_create freebsd-workq 300
+    queue_create freebsd-doneq 300
+    builder_done_sink_create freebsd-done freebsd-doneq
+
+    queue_create poolq 300
+
+    deploy_functions
+}
+
+Help="$Help
+deploy_functions # deploy functions to Google Cloud"
+deploy_functions()
+{
+    function_deploy_queue freebsd-doneq collector --source="$ProgDir/controller"
+    function_deploy_queue freebsd-workq dispatcher --retry --source="$ProgDir/controller"
+    function_deploy_http listener --source="$ProgDir/controller"
+}
+
+Help="$Help
+undeploy # undeploy from Google Cloud"
+undeploy()
+{
+    function_delete listener
+    function_delete dispatcher
+    function_delete collector
+
+    queue_delete poolq
+
+    builder_done_sink_delete freebsd-done
+    queue_delete freebsd-doneq
+    queue_delete freebsd-workq
 }
