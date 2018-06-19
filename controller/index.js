@@ -145,33 +145,37 @@ exports.scheduler = (evt) =>
         })
 }
 
-exports.completer = (evt) =>
+exports.collector = (evt) =>
 {
     message = evt.data
 
-    if (message.attributes === undefined ||
-        message.attributes.instance === undefined ||
-        message.attributes.clone_url === undefined)
+    if (message.data == null)
     {
-        // discard the erroneous message (absense of "commit" is allowed and means "latest")
+        // discard the erroneous message
         console.error("invalid doneq message: " +
             String(message))
         return Promise.resolve()
     }
 
-    // delete instance
-    zone.vm(message.attributes.instance).delete().
-        catch(err => console.error(err))
+    message = JSON.parse(Buffer(message.data, "base64").toString()).jsonPayload
 
-    // repost instance to poolq
-    attributes =
+    switch (message.event_subtype)
     {
-        instance: message.attributes.instance
+    case "compute.instances.stop":
+    case "compute.instances.guestTerminate":
+        return zone.vm(message.resource.name).delete()
+    case "compute.instances.delete":
+        attributes =
+        {
+            instance: message.resource.name,
+        }
+        return queue_post("poolq", attributes)
+    default:
+        // discard the erroneous message
+        console.error("invalid doneq message: unknown event_subtype: " +
+            String(message))
+        return Promise.resolve()
     }
-    queue_post("poolq", attributes).
-        catch(err => console.error(err))
-
-    return Promise.resolve()
 }
 
 function queue_post(topic, attributes)
