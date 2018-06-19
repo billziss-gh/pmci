@@ -54,9 +54,10 @@ exports.listener = (req, rsp) =>
 {
     // check X-Hub-Signature to ensure that GitHub is accessing us
 
-    if (req.query.image === undefined)
+    if (req.query.image === undefined ||
+        req.query.token === undefined)
     {
-        rsp.status(400).send("query: missing image")
+        rsp.status(400).send("query: missing image or token")
         return
     }
 
@@ -72,6 +73,7 @@ exports.listener = (req, rsp) =>
     attributes =
     {
         image: req.query.image,
+        token: req.query.token,
         clone_url: req.body.repository.clone_url,
         commit: req.body.after,
     }
@@ -94,6 +96,7 @@ exports.scheduler = (evt) =>
 
     if (message.attributes === undefined ||
         message.attributes.image === undefined ||
+        message.attributes.token === undefined ||
         message.attributes.clone_url === undefined)
     {
         // discard the erroneous message (absense of "commit" is allowed and means "latest")
@@ -120,7 +123,7 @@ exports.scheduler = (evt) =>
 
             // prepare builder args
             args = ""
-            args += `BUILDER_ARG_SRCHOST_TOKEN=${package.config.SRCHOST_TOKEN}`
+            args += `BUILDER_ARG_SRCHOST_TOKEN=${message.attributes.token}`
             args += `BUILDER_ARG_CLONE_URL=${message.attributes.clone_url}\n`
             if (message.attributes.commit !== undefined)
                 args += `BUILDER_ARG_COMMIT=${message.attributes.commit}\n`
