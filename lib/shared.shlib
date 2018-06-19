@@ -45,7 +45,7 @@ Help="$Help
 builder_done_sink_delete SINK_NAME"
 builder_done_sink_delete()
 {
-    gcloud logging sinks delete $1
+    gcloud logging sinks delete --quiet $1
 }
 
 Help="$Help
