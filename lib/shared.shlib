@@ -117,7 +117,7 @@ srchost_post_status()
     local repo=$3
     local commit=$4
     local status=$5
-    curl -X POST https://api.github.com/repos/$user/$repo/statuses/$commit \
+    curl -s -S -X POST https://api.github.com/repos/$user/$repo/statuses/$commit \
         -H "Authorization: token $BUILDER_ARG_SRCHOST_TOKEN" \
         -d "{ \
 \"context\": \"continuous-integration/pmci\", \
