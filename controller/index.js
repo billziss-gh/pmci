@@ -10,21 +10,6 @@
  * in the License.txt file at the root of this project.
  */
 
-/*
- * The controller consists of a number of Cloud Functions:
- *
- * - listener: An HTTP Function that listens for GitHub push events and publishes them in acptq
- *   ("accept" q).
- * - scheduler: A Background Retry Function that listens for acptq messages. When it receives one
- *   it attempts to pull a free builder instance from poolq and if successful it starts that
- *   instance and publishes the received message to workq. In this case the message is not retried.
- * - completer: A Background Retry Function that listens for doneq messages (posted by builders).
- *   When it receives one it posts a GitHub commit status update.
- *
- * Builders are not part of the controller. They pull messages from the workq, perform the work
- * described and then post messages in the doneq and delete themselves.
- */
-
 const package = require("./package.json")
 const compute = require("@google-cloud/compute")
 const pubsub = require("@google-cloud/pubsub")
@@ -46,15 +31,17 @@ const vmconf =
                     "diskSizeGb": package.config.BUILDER_DISK_SIZE,
                 },
                 "autoDelete": true,
-            }
+            },
         ],
         "metadata":
         {
             "items":
-            {
-                "key": "startup-script",
-                "value": package.config.FREEBSD_STARTX,
-            },
+            [
+                {
+                    "key": "startup-script",
+                    "value": package.config.FREEBSD_STARTX,
+                },
+            ],
         },
     },
 }
@@ -81,14 +68,14 @@ exports.listener = (req, rsp) =>
         return
     }
 
-    // post event to acptq
+    // post event to workq
     attributes =
     {
         image: req.query.image,
         clone_url: req.body.repository.clone_url,
         commit: req.body.after,
     }
-    queue_post(req.query.image + "-acptq", attributes).
+    queue_post(req.query.image + "-workq", attributes).
         then(_ =>
         {
             rsp.status(200).end()
@@ -102,7 +89,7 @@ exports.listener = (req, rsp) =>
 
 exports.scheduler = (evt) =>
 {
-    // received message from acptq
+    // received message from workq
     message = evt.data
 
     if (message.attributes === undefined ||
@@ -110,7 +97,7 @@ exports.scheduler = (evt) =>
         message.attributes.clone_url === undefined)
     {
         // discard the erroneous message (absense of "commit" is allowed and means "latest")
-        console.error("invalid acptq message: " +
+        console.error("invalid workq message: " +
             String(message))
         return Promise.resolve()
     }
@@ -131,14 +118,18 @@ exports.scheduler = (evt) =>
                 return Promise.reject("retry: invalid poolq message: " +
                     String(poolmsg))
 
+            // prepare builder args
+            args = ""
+            args += `ARG_SRCHOST_TOKEN=${package.config.SRCHOST_TOKEN}`
+            args += `ARG_CLONE_URL=${message.attributes.clone_url}\n`
+            if (message.attributes.commit !== undefined)
+                args += `ARG_COMMIT=${message.attributes.commit}\n`
+
             // create builder instance
-            return zone.vm(poolmsg.attributes.instance).create(vmconf[message.attributes.image]).
+            conf = vmconf[message.attributes.image].clone()
+            conf.metadata.items[0].value = args + c.metadata.items[0].value
+            return zone.vm(poolmsg.attributes.instance).create(conf).
                 then(_ =>
-                {
-                    // post message to workq
-                    return queue_post(message.attributes.image + "-workq", message.attributes)
-                })
-                .then(_ =>
                 {
                     // acknowledge poolq message
                     return queue_ack("poolq", ack_id)
@@ -176,9 +167,6 @@ exports.completer = (evt) =>
     }
     queue_post("poolq", attributes).
         catch(err => console.error(err))
-
-    // update commit status on GitHub
-    // TODO
 
     return Promise.resolve()
 }
