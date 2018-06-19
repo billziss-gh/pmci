@@ -89,7 +89,7 @@ exports.listener = (req, rsp) =>
         })
 }
 
-exports.scheduler = (evt) =>
+exports.dispatcher = (evt) =>
 {
     // received message from workq
     message = evt.data
