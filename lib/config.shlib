@@ -8,6 +8,7 @@
 # in the License.txt file at the root of this project.
 
 PROJECT="poor-mans-ci"
+REGION="us-central1"
 BUILDER_ZONE="us-central1-c"
 BUILDER_MACHINE_TYPE="f1-micro"
 BUILDER_MIN_CPU_PLATFORM="Intel Skylake"
@@ -21,6 +22,7 @@ config_json()
     (
         set -- \
             PROJECT \
+            REGION \
             BUILDER_ZONE \
             BUILDER_MACHINE_TYPE \
             BUILDER_MIN_CPU_PLATFORM \

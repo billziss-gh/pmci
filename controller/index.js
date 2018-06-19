@@ -147,6 +147,7 @@ exports.dispatcher = (evt) =>
 
 exports.collector = (evt) =>
 {
+    // received message from doneq
     message = evt.data
 
     if (message.data == null)

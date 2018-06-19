@@ -1,0 +1,28 @@
+# event.shlib
+#
+# Copyright 2018 Bill Zissimopoulos
+
+# This file is part of "Poor Man's CI".
+#
+# It is licensed under the BSD license. The full license text can be found
+# in the License.txt file at the root of this project.
+
+Help="$Help
+event_push IMAGE TOKEN CLONE_URL COMMIT"
+event_push()
+{
+    local image="$1"
+    local token="$2"
+    local clone_url="$3"
+    local commit="$4"
+
+    curl -X POST \
+        "https://$REGION-$PROJECT.cloudfunctions.net/listener?image=$image&token=$token" \
+        -H "Content-type: application/json" \
+        -d "{ \
+\"after\": \"$commit\", \
+\"repository\": { \
+\"clone_url\": \"$clone_url\" \
+} \
+}"
+}
