@@ -204,7 +204,7 @@ function queue_recv(topic)
     return subcli.pull(request)
 }
 
-function queue_recv(topic, ackId)
+function queue_ack(topic, ackId)
 {
     request =
     {
