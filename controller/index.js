@@ -198,7 +198,7 @@ function queue_recv(topic)
 {
     request =
     {
-        subscription: subcli.topicPath(project, topic),
+        subscription: subcli.subscriptionPath(project, topic),
         maxMessages: 1,
         returnImmediately: true,
     }
@@ -209,7 +209,7 @@ function queue_ack(topic, ackId)
 {
     request =
     {
-        subscription: subcli.topicPath(project, topic),
+        subscription: subcli.subscriptionPath(project, topic),
         ackIds: [ackId],
     }
     return subcli.acknowledge(request)

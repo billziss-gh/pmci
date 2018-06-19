@@ -40,7 +40,7 @@ deploy_functions # deploy functions to Google Cloud"
 deploy_functions()
 {
     function_deploy_queue freebsd-doneq collector --source="$ProgDir/controller"
-    function_deploy_queue freebsd-workq dispatcher --retry --source="$ProgDir/controller"
+    function_deploy_queue freebsd-workq dispatcher --source="$ProgDir/controller"
     function_deploy_http listener --source="$ProgDir/controller"
 }
 
