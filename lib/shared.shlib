@@ -39,6 +39,7 @@ builder_done_sink_create()
 logName="projects/'$PROJECT'/logs/compute.googleapis.com%2Factivity_log"
 jsonPayload.event_type:"GCE_OPERATION_DONE"
 (jsonPayload.event_subtype:"compute.instances.stop" OR jsonPayload.event_subtype:"compute.instances.guestTerminate" OR jsonPayload.event_subtype:"compute.instances.delete")'
+    # gcloud logging sinks describe $1
 }
 
 Help="$Help
@@ -122,7 +123,7 @@ srchost_post_status()
         -d "{ \
 \"context\": \"continuous-integration/pmci\", \
 \"state\": \"$status\", \
-\"target_url\": \"http://storage.googleapis.com/$STORAGE_BUCKET_LOGS/$commit\" \
+\"target_url\": \"http://storage.googleapis.com/$STORAGE_BUCKET_LOGS/$commit.log\" \
 }" \
         --retry 5 \
         --retry-max-time 30
