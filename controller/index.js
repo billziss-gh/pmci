@@ -120,10 +120,10 @@ exports.scheduler = (evt) =>
 
             // prepare builder args
             args = ""
-            args += `ARG_SRCHOST_TOKEN=${package.config.SRCHOST_TOKEN}`
-            args += `ARG_CLONE_URL=${message.attributes.clone_url}\n`
+            args += `BUILDER_ARG_SRCHOST_TOKEN=${package.config.SRCHOST_TOKEN}`
+            args += `BUILDER_ARG_CLONE_URL=${message.attributes.clone_url}\n`
             if (message.attributes.commit !== undefined)
-                args += `ARG_COMMIT=${message.attributes.commit}\n`
+                args += `BUILDER_ARG_COMMIT=${message.attributes.commit}\n`
 
             // create builder instance
             conf = vmconf[message.attributes.image].clone()

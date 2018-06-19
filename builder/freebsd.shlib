@@ -8,19 +8,24 @@
 # in the License.txt file at the root of this project.
 
 Help="$Help
-freebsd_builder_create INSTANCE_NAMES [FLAGS]..."
+freebsd_builder_create INSTANCE_NAMES BUILDER_ARG_NAME=VALUE"
 freebsd_builder_create()
 {
+    local name="$1"; shift
+    rm -f /tmp/startx.$$
+    for a in "$@"; do
+        echo "$a" >>/tmp/startx.$$
+    done
     cat \
         "$ProgDir/lib/config.shlib" \
         "$ProgDir/lib/shared.shlib" \
         "$ProgDir/builder/freebsd.startx" \
-        >/tmp/startx.$$
+        >>/tmp/startx.$$
     builder_create \
         --image-project=freebsd-org-cloud-dev \
         --image=freebsd-11-1-release-amd64 \
         --metadata-from-file=startup-script=/tmp/startx.$$ \
-        "$@"
+        "$name"
     local ec=$?
     rm -f /tmp/startx.$$
     return $ec

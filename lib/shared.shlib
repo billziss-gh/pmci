@@ -64,8 +64,8 @@ Help="$Help
 builder_work # works only within GCE"
 builder_work()
 {
-    local clone_url="$ARG_CLONE_URL"
-    local commit=$ARG_COMMIT
+    local clone_url="$BUILDER_ARG_CLONE_URL"
+    local commit=$BUILDER_ARG_COMMIT
 
     if [ -n "$clone_url" ]; then
         (
@@ -118,7 +118,7 @@ srchost_post_status()
     local commit=$4
     local status=$5
     curl -X POST https://api.github.com/repos/$user/$repo/statuses/$commit \
-        -H "Authorization: token $ARG_SRCHOST_TOKEN" \
+        -H "Authorization: token $BUILDER_ARG_SRCHOST_TOKEN" \
         -d "{\
         \"context\": \"continuous-integration/pmci\"\
         \"state\": \"$status\",\
