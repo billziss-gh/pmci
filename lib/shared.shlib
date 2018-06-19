@@ -119,11 +119,11 @@ srchost_post_status()
     local status=$5
     curl -X POST https://api.github.com/repos/$user/$repo/statuses/$commit \
         -H "Authorization: token $BUILDER_ARG_SRCHOST_TOKEN" \
-        -d "{\
-        \"context\": \"continuous-integration/pmci\"\
-        \"state\": \"$status\",\
-        \"target_url\": \"http://storage.googleapis.com/$STORAGE_BUCKET_LOGS/$commit\",\
-        }" \
+        -d "{ \
+\"context\": \"continuous-integration/pmci\", \
+\"state\": \"$status\", \
+\"target_url\": \"http://storage.googleapis.com/$STORAGE_BUCKET_LOGS/$commit\" \
+}" \
         --retry 5 \
         --retry-max-time 30
 }
