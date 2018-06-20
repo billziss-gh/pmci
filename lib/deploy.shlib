@@ -26,11 +26,10 @@ Help="$Help
 deploy # deploy to Google Cloud"
 deploy()
 {
-    queue_create freebsd-workq 300
-    queue_create freebsd-doneq 300
-    builder_done_sink_create freebsd-done freebsd-doneq
-
+    queue_create workq 300
+    queue_create doneq 300
     queue_create poolq 300
+    builder_done_sink_create done doneq
 
     deploy_functions
 }
@@ -39,8 +38,11 @@ Help="$Help
 deploy_functions # deploy functions to Google Cloud"
 deploy_functions()
 {
-    function_deploy_queue freebsd-doneq collector --source="$ProgDir/controller"
-    function_deploy_queue freebsd-workq dispatcher --source="$ProgDir/controller"
+    function_deploy_queue doneq collector --source="$ProgDir/controller"
+    function_deploy_queue workq dispatcher-workq --entry-point=dispatcher \
+        --source="$ProgDir/controller"
+    function_deploy_queue poolq dispatcher-poolq --entry-point=dispatcher \
+        --source="$ProgDir/controller"
     function_deploy_http listener --source="$ProgDir/controller"
 }
 
@@ -49,12 +51,12 @@ undeploy # undeploy from Google Cloud"
 undeploy()
 {
     function_delete listener
-    function_delete dispatcher
+    function_delete dispatcher-poolq
+    function_delete dispatcher-workq
     function_delete collector
 
+    builder_done_sink_delete done
     queue_delete poolq
-
-    builder_done_sink_delete freebsd-done
-    queue_delete freebsd-doneq
-    queue_delete freebsd-workq
+    queue_delete doneq
+    queue_delete workq
 }

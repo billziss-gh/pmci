@@ -77,7 +77,7 @@ exports.listener = (req, rsp) =>
         clone_url: req.body.repository.clone_url,
         commit: req.body.after,
     }
-    queue_post(req.query.image + "-workq", attributes).
+    queue_post("workq", attributes).
         then(_ =>
         {
             rsp.status(200).end()
@@ -91,58 +91,81 @@ exports.listener = (req, rsp) =>
 
 exports.dispatcher = (evt) =>
 {
-    // received message from workq
+    // received message from workq or poolq
     message = evt.data
 
-    if (message.attributes === undefined ||
+    if (message.attributes === undefined || ((
         message.attributes.image === undefined ||
         message.attributes.token === undefined ||
-        message.attributes.clone_url === undefined)
+        message.attributes.clone_url === undefined) && (
+        message.attributes.instance === undefined)))
+        return Promise.reject("invalid workq or poolq message: " + String(message))
+
+    if (message.attributes.clone_url !== undefined)
     {
-        // discard the erroneous message (absense of "commit" is allowed and means "latest")
-        console.error("invalid workq message: " +
-            String(message))
-        return Promise.resolve()
+        // have work; pull instance from poolq
+        return queue_recv("poolq").
+            then(responses =>
+            {
+                response = responses[0]
+                if (response.received_messages.length == 0)
+                    // no pool instance
+                    return Promise.resolve()
+
+                ack_id = response.received_messages[0].ack_id
+                poolmsg = response.received_messages[0].message
+                if (poolmsg.attributes === undefined ||
+                    poolmsg.attributes.instance === undefined)
+                    return Promise.reject("invalid poolq message: " + String(poolmsg))
+
+                    return builder_create(
+                        message.attributes.image,
+                        poolmsg.attributes.instance,
+                        message.attributes.token,
+                        message.attributes.clone_url,
+                        message.attributes.commit).
+                        then(_ =>
+                        {
+                            // acknowledge poolq message
+                            return queue_ack("poolq", ack_id)
+                        })
+            })
     }
+    else if (message.attributes.instance !== undefined)
+    {
+        // have instance; pull work from workq
+        return queue_recv("workq").
+            then(responses =>
+            {
+                response = responses[0]
+                if (response.received_messages.length == 0)
+                    // no work
+                    return Promise.resolve()
 
-    // pull instance from poolq
-    return queue_recv("poolq").
-        then(responses =>
-        {
-            response = responses[0]
-            if (response.received_messages.length == 0)
-                return Promise.reject("retry: no pool instance: " +
-                    String(message.attributes.clone_url) + " " +
-                    String(message.attributes.commit))
+                ack_id = response.received_messages[0].ack_id
+                workmsg = response.received_messages[0].message
+                if (workmsg.attributes === undefined ||
+                    workmsg.attributes.image === undefined ||
+                    workmsg.attributes.token === undefined ||
+                    workmsg.attributes.clone_url === undefined)
+                    return Promise.reject("invalid workq message: " + String(poolmsg))
 
-            poolmsg = response.received_messages[0].message
-            if (poolmsg.attributes === undefined ||
-                poolmsg.attributes.instance === undefined)
-                return Promise.reject("retry: invalid poolq message: " +
-                    String(poolmsg))
-
-            // prepare builder args
-            args = ""
-            args += `BUILDER_ARG_SRCHOST_TOKEN=${message.attributes.token}`
-            args += `BUILDER_ARG_CLONE_URL=${message.attributes.clone_url}\n`
-            if (message.attributes.commit !== undefined)
-                args += `BUILDER_ARG_COMMIT=${message.attributes.commit}\n`
-
-            // create builder instance
-            conf = vmconf[message.attributes.image].clone()
-            conf.metadata.items[0].value = args + c.metadata.items[0].value
-            return zone.vm(poolmsg.attributes.instance).create(conf).
-                then(_ =>
-                {
-                    // acknowledge poolq message
-                    return queue_ack("poolq", ack_id)
-                })
-        }).
-        catch(err =>
-        {
-            console.error(err)
-            throw err
-        })
+                return builder_create(
+                    workmsg.attributes.image,
+                    message.attributes.instance,
+                    workmsg.attributes.token,
+                    workmsg.attributes.clone_url,
+                    workmsg.attributes.commit).
+                    then(_ =>
+                    {
+                        // acknowledge workq message
+                        return queue_ack("workq", ack_id)
+                    })
+            })
+    }
+    else
+        // oops!
+        return Promise.reject("internal error!")
 }
 
 exports.collector = (evt) =>
@@ -151,12 +174,7 @@ exports.collector = (evt) =>
     message = evt.data
 
     if (message.data == null)
-    {
-        // discard the erroneous message
-        console.error("invalid doneq message: " +
-            String(message))
-        return Promise.resolve()
-    }
+        return Promise.reject("invalid doneq message: " + String(message))
 
     message = JSON.parse(Buffer(message.data, "base64").toString()).jsonPayload
 
@@ -172,10 +190,7 @@ exports.collector = (evt) =>
         }
         return queue_post("poolq", attributes)
     default:
-        // discard the erroneous message
-        console.error("invalid doneq message: unknown event_subtype: " +
-            String(message))
-        return Promise.resolve()
+        return Promise.reject("invalid doneq message: unknown event_subtype: " + String(message))
     }
 }
 
@@ -213,4 +228,19 @@ function queue_ack(topic, ackId)
         ackIds: [ackId],
     }
     return subcli.acknowledge(request)
+}
+
+function builder_create(image, instance, token, clone_url, commit)
+{
+    // prepare builder args
+    args = ""
+    args += `BUILDER_ARG_SRCHOST_TOKEN=${token}`
+    args += `BUILDER_ARG_CLONE_URL=${clone_url}\n`
+    if (commit !== undefined)
+        args += `BUILDER_ARG_COMMIT=${commit}\n`
+
+    // create builder instance
+    conf = vmconf[image].clone()
+    conf.metadata.items[0].value = args + c.metadata.items[0].value
+    return zone.vm(instance).create(conf)
 }
