@@ -108,7 +108,8 @@ exports.dispatcher = (evt) =>
             then(responses =>
             {
                 response = responses[0]
-                if (response.received_messages.length == 0)
+                if (response.received_messages === undefined ||
+                    response.received_messages.length == 0)
                     // no pool instance
                     return Promise.resolve("no instance found")
 
@@ -138,7 +139,8 @@ exports.dispatcher = (evt) =>
             then(responses =>
             {
                 response = responses[0]
-                if (response.received_messages.length == 0)
+                if (response.received_messages === undefined ||
+                    response.received_messages.length == 0)
                     // no work
                     return Promise.resolve("no work found")
 
