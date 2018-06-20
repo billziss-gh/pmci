@@ -110,7 +110,7 @@ exports.dispatcher = (evt) =>
                 response = responses[0]
                 if (response.received_messages.length == 0)
                     // no pool instance
-                    return Promise.resolve()
+                    return Promise.resolve("no instance found")
 
                 ack_id = response.received_messages[0].ack_id
                 poolmsg = response.received_messages[0].message
@@ -140,7 +140,7 @@ exports.dispatcher = (evt) =>
                 response = responses[0]
                 if (response.received_messages.length == 0)
                     // no work
-                    return Promise.resolve()
+                    return Promise.resolve("no work found")
 
                 ack_id = response.received_messages[0].ack_id
                 workmsg = response.received_messages[0].message
