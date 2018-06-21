@@ -17,6 +17,9 @@ deploy()
     builder_done_sink_create done doneq
 
     deploy_controller
+
+    # seed the pool
+    queue_post poolq instance=builder0
 }
 
 Help="$Help

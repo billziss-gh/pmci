@@ -13,7 +13,10 @@ ProgDir=$(cd $(dirname "$0") && pwd)
 ProgName=$(basename "$0")
 
 Help=""
-for f in $(find $ProgDir -type f -name '*.shlib'); do
+for f in event deploy config shared; do
+    . $ProgDir/lib/$f.shlib
+done
+for f in $(find $ProgDir/builder -type f -name '*.shlib' | sort); do
     . $f
 done
 

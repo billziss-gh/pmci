@@ -101,10 +101,9 @@ exports.listener = (req, rsp) =>
     }
 
     if (req.body.repository === undefined ||
-        req.body.repository.clone_url === undefined ||
-        req.body.after === undefined)
+        req.body.repository.clone_url === undefined)
     {
-        rsp.status(400).send("body: missing clone_url or commit")
+        rsp.status(400).send("body: missing clone_url")
         return
     }
 
@@ -114,8 +113,9 @@ exports.listener = (req, rsp) =>
         image: req.query.image,
         token: req.query.token,
         clone_url: req.body.repository.clone_url,
-        commit: req.body.after,
     }
+    if (req.body.after !== undefined)
+        attributes.commit = req.body.after
     queue_post("workq", attributes).
         then(_ =>
         {

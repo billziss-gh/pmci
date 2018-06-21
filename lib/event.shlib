@@ -8,22 +8,32 @@
 # in the License.txt file at the root of this project.
 
 Help="$Help
-event_push IMAGE TOKEN CLONE_URL COMMIT"
-event_push()
+github_push IMAGE USER/REPO [COMMIT] # requires PMCI/GitHub token in keyring"
+github_push()
 {
     local image="$1"
-    local token="$2"
-    local clone_url="$3"
-    local commit="$4"
+    local clone_url="https://github.com/$2.git"
+    local token=$(keyring get PMCI GitHub)
 
-    curl -X POST \
-        "https://$REGION-$PROJECT.cloudfunctions.net/listener?image=$image&token=$token" \
-        -H "Content-type: application/json" \
-        -d "{ \
-\"after\": \"$commit\", \
+    local data
+    if [ -n "$3" ]; then
+        data="{ \
+\"after\": \"$3\", \
 \"repository\": { \
 \"clone_url\": \"$clone_url\" \
 } \
 }"
+    else
+        data="{ \
+\"repository\": { \
+\"clone_url\": \"$clone_url\" \
+} \
+}"
+    fi
+
+    curl -X POST \
+        "https://$REGION-$PROJECT.cloudfunctions.net/listener?image=$image&token=$token" \
+        -H "Content-type: application/json" \
+        -d "$data"
     echo
 }
