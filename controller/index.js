@@ -61,6 +61,12 @@ exports.listener = (req, rsp) =>
         return
     }
 
+    if (!(req.query.image in vmconf))
+    {
+        rsp.status(400).send("query: unknown image " + req.query.image)
+        return
+    }
+
     if (req.body.repository === undefined ||
         req.body.repository.clone_url === undefined ||
         req.body.after === undefined)
@@ -103,15 +109,18 @@ exports.dispatcher = (evt) =>
         message.attributes.token === undefined ||
         message.attributes.clone_url === undefined)
         // invalid workq message; do not retry
-        return Promise.resolve("invalid workq message: " + String(message))
+        return Promise.resolve("workq: skip invalid message: " + String(message))
 
     // have work; pull instance from poolq
     return queue_recv("poolq").
         then(responses =>
         {
             response = responses[0]
-            if (response.received_messages === undefined ||
-                response.received_messages.length == 0)
+            received = response.received_messages
+            if (response.received_messages === undefined)
+                received = response.receivedMessages
+            if (received === undefined ||
+                received.length == 0)
             {
                 // HACK: if we reject this message it will be retried immediately,
                 // and we will spin unproductively. Ideally the infrastructure would
@@ -124,21 +133,21 @@ exports.dispatcher = (evt) =>
                 return new Promise(resolve => setTimeout(resolve, 60000)).
                     then(_ =>
                     {
-                        return Promise.reject("no instance found")
+                        return Promise.reject("poolq: no available instance")
                     })
 
                 // no pool instance; retry
-                //return Promise.reject("no instance found")
+                //return Promise.reject("poolq: no available instance")
             }
 
-            ack_id = response.received_messages[0].ack_id
-            poolmsg = response.received_messages[0].message
+            ack_id = received[0].ack_id
+            poolmsg = received[0].message
             if (poolmsg.attributes === undefined ||
                 poolmsg.attributes.instance === undefined)
             {
                 // invalid poolq message; acknowledge it and retry the workq message
                 queue_ack("poolq", ack_id)
-                return Promise.reject("invalid poolq message: " + String(poolmsg))
+                return Promise.reject("poolq: skip invalid message: " + String(poolmsg))
             }
 
             // have builder instance name; create new builder
@@ -153,11 +162,6 @@ exports.dispatcher = (evt) =>
                     // acknowledge poolq message
                     return queue_ack("poolq", ack_id)
                 })
-        }).
-        catch(err =>
-        {
-            console.error(err)
-            throw err
         })
     }
 
@@ -171,7 +175,7 @@ exports.collector = (evt) =>
     message = evt.data
 
     if (message.data == null)
-        return Promise.reject("invalid doneq message: " + String(message))
+        return Promise.reject("doneq: skip invalid message: " + String(message))
 
     message = JSON.parse(Buffer(message.data, "base64").toString()).jsonPayload
 
@@ -187,7 +191,7 @@ exports.collector = (evt) =>
         }
         return queue_post("poolq", attributes)
     default:
-        return Promise.reject("invalid doneq message: unknown event_subtype: " + String(message))
+        return Promise.reject("doneq: invalid message: unknown event_subtype: " + String(message))
     }
 }
 
@@ -237,7 +241,7 @@ function builder_create(image, instance, token, clone_url, commit)
         args += `BUILDER_ARG_COMMIT=${commit}\n`
 
     // create builder instance
-    conf = vmconf[image].clone()
-    conf.metadata.items[0].value = args + c.metadata.items[0].value
+    conf = JSON.parse(JSON.stringify(vmconf[image]))
+    conf.metadata.items[0].value = args + conf.metadata.items[0].value
     return zone.vm(instance).create(conf)
 }

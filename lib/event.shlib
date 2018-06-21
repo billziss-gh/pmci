@@ -25,4 +25,5 @@ event_push()
 \"clone_url\": \"$clone_url\" \
 } \
 }"
+    echo
 }
