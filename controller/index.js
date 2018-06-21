@@ -49,6 +49,24 @@ const vmconf =
                 ],
             },
         ],
+        "serviceAccounts":
+        [
+            {
+                "email": package.config.BUILDER_SERVICE_ACCOUNT,
+                "scopes":
+                [
+                    "https://www.googleapis.com/auth/compute",
+                    "https://www.googleapis.com/auth/devstorage.read_only",
+                    "https://www.googleapis.com/auth/devstorage.read_write",
+                    "https://www.googleapis.com/auth/logging.write",
+                    "https://www.googleapis.com/auth/monitoring.write",
+                    "https://www.googleapis.com/auth/pubsub",
+                    "https://www.googleapis.com/auth/service.management.readonly",
+                    "https://www.googleapis.com/auth/servicecontrol",
+                    "https://www.googleapis.com/auth/trace.append",
+                ],
+            },
+        ],
         "metadata":
         {
             "items":
@@ -167,6 +185,8 @@ exports.dispatcher = (evt) =>
                 return Promise.reject("poolq: skip invalid message: " + String(poolmsg))
             }
 
+            console.log("poolq: received instance " + poolmsg.attributes.instance)
+
             // have builder instance name; create new builder
             return builder_create(
                 message.attributes.image,
@@ -178,8 +198,15 @@ exports.dispatcher = (evt) =>
                 {
                     // acknowledge poolq message
                     return queue_ack("poolq", ackId)
+                }).
+                then(_ =>
+                {
+                    console.log("builder: created " +
+                        message.attributes.image + " instance " + poolmsg.attributes.instance +
+                        " for " + message.attributes.clone_url +
+                        " commit " + message.attributes.commit)
                 })
-        })
+            })
     }
 
 exports.collector = (evt) =>
@@ -200,13 +227,21 @@ exports.collector = (evt) =>
     {
     case "compute.instances.stop":
     case "compute.instances.guestTerminate":
-        return zone.vm(message.resource.name).delete()
+        return zone.vm(message.resource.name).delete().
+            then(_ =>
+            {
+                console.log("builder: deleted " + message.resource.name)
+            })
     case "compute.instances.delete":
         attributes =
         {
             instance: message.resource.name,
         }
-        return queue_post("poolq", attributes)
+        return queue_post("poolq", attributes).
+            then(_ =>
+            {
+                console.log("poolq: posted instance " + message.resource.name)
+            })
     default:
         return Promise.reject("doneq: invalid message: unknown event_subtype: " + String(message))
     }
