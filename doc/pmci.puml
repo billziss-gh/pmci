@@ -5,32 +5,31 @@ participant "<img:github.png>" as GitHub
 box "Controller"
     participant Listener
     participant Scheduler
-    participant Completer
+    participant Collector
 end box
-participant Pool
+participant "Builder\nPool" as Pool
 
-GitHub ->> Listener: push
+GitHub ->> Listener: push(repo)
 activate Listener
 deactivate Listener
 loop retry delivery while\nno builder available
-    Listener ->> Scheduler: work
+    Listener ->> Scheduler: work(repo)
     activate Scheduler
 end
-Pool ->> Scheduler: builderName
+Pool ->> Scheduler: name
 create builder
-Scheduler -> builder: new(builderName)
+Scheduler -> builder: new(name, repo)
 activate builder
-Scheduler ->> builder: work
 deactivate Scheduler
-builder -> builder: build\nrepo
+builder -> builder: build(repo)
 activate builder #Salmon
 deactivate builder
-builder ->> Completer: done(builderName)
+builder ->> GitHub: status
+builder ->> Collector: done(name)
 destroy builder
-activate Completer
-Completer ->> Pool: builderName
-Completer ->> GitHub: status
-deactivate Completer
+activate Collector
+Collector ->> Pool: name
+deactivate Collector
 note over builder #Salmon
     Salmon color:
     CI processing.
