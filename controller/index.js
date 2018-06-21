@@ -14,6 +14,9 @@ const package = require("./package.json")
 const compute = require("@google-cloud/compute")
 const pubsub = require("@google-cloud/pubsub")
 
+const project = package.config.PROJECT
+const region = package.config.REGION
+
 const zone = new compute().zone(package.config.BUILDER_ZONE)
 const vmconf =
 {
@@ -34,6 +37,18 @@ const vmconf =
                 "autoDelete": true,
             },
         ],
+        "networkInterfaces":
+        [
+            {
+                "accessConfigs":
+                [
+                    {
+                        "type": "ONE_TO_ONE_NAT",
+                        "name": "External NAT",
+                    },
+                ],
+            },
+        ],
         "metadata":
         {
             "items":
@@ -49,7 +64,6 @@ const vmconf =
 
 const pubcli = new pubsub.v1.PublisherClient()
 const subcli = new pubsub.v1.SubscriberClient()
-const project = package.config.PROJECT
 
 exports.listener = (req, rsp) =>
 {
@@ -238,7 +252,7 @@ function builder_create(image, instance, token, clone_url, commit)
 {
     // prepare builder args
     args = ""
-    args += `BUILDER_ARG_SRCHOST_TOKEN=${token}`
+    args += `BUILDER_ARG_SRCHOST_TOKEN=${token}\n`
     args += `BUILDER_ARG_CLONE_URL=${clone_url}\n`
     if (commit !== undefined)
         args += `BUILDER_ARG_COMMIT=${commit}\n`
