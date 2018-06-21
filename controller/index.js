@@ -27,7 +27,8 @@ const vmconf =
                 "boot": true,
                 "initializeParams":
                 {
-                    "sourceImage": "freebsd-org-cloud-dev/freebsd-11-1-release-amd64",
+                    "sourceImage": "https://www.googleapis.com/compute/v1/" +
+                        "projects/freebsd-org-cloud-dev/global/images/freebsd-11-1-release-amd64",
                     "diskSizeGb": package.config.BUILDER_DISK_SIZE,
                 },
                 "autoDelete": true,
@@ -140,13 +141,15 @@ exports.dispatcher = (evt) =>
                 //return Promise.reject("poolq: no available instance")
             }
 
-            ack_id = received[0].ack_id
+            ackId = received[0].ack_id
+            if (ackId === undefined)
+                ackId = received[0].ackId
             poolmsg = received[0].message
             if (poolmsg.attributes === undefined ||
                 poolmsg.attributes.instance === undefined)
             {
                 // invalid poolq message; acknowledge it and retry the workq message
-                queue_ack("poolq", ack_id)
+                queue_ack("poolq", ackId)
                 return Promise.reject("poolq: skip invalid message: " + String(poolmsg))
             }
 
@@ -160,7 +163,7 @@ exports.dispatcher = (evt) =>
                 then(_ =>
                 {
                     // acknowledge poolq message
-                    return queue_ack("poolq", ack_id)
+                    return queue_ack("poolq", ackId)
                 })
         })
     }
