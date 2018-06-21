@@ -26,8 +26,8 @@ Help="$Help
 deploy # deploy to Google Cloud"
 deploy()
 {
-    queue_create workq 300
-    queue_create doneq 300
+    queue_topic_create workq 300
+    queue_topic_create doneq 300
     queue_create poolq 300
     builder_done_sink_create done doneq
 
@@ -38,11 +38,8 @@ Help="$Help
 deploy_functions # deploy functions to Google Cloud"
 deploy_functions()
 {
-    function_deploy_queue doneq collector --source="$ProgDir/controller"
-    function_deploy_queue poolq dispatcher-poolq --entry-point=dispatcher \
-        --source="$ProgDir/controller"
-    function_deploy_queue workq dispatcher-workq --entry-point=dispatcher \
-        --source="$ProgDir/controller"
+    function_deploy_topic doneq collector --source="$ProgDir/controller"
+    function_deploy_topic workq dispatcher --source="$ProgDir/controller"
     function_deploy_http listener --source="$ProgDir/controller"
 }
 
@@ -51,12 +48,11 @@ undeploy # undeploy from Google Cloud"
 undeploy()
 {
     function_delete listener
-    function_delete dispatcher-workq
-    function_delete dispatcher-poolq
+    function_delete dispatcher
     function_delete collector
 
     builder_done_sink_delete done
     queue_delete poolq
-    queue_delete doneq
-    queue_delete workq
+    queue_topic_delete doneq
+    queue_topic_delete workq
 }

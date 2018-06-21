@@ -91,87 +91,78 @@ exports.listener = (req, rsp) =>
 
 exports.dispatcher = (evt) =>
 {
-    // received message from workq or poolq
+    // Retry Background Function:
+    // - Promise.resolve means that message is accepted.
+    // - Promise.reject means that message will be retried.
+
+    // received message from workq
     message = evt.data
 
-    if (message.attributes === undefined || ((
+    if (message.attributes === undefined ||
         message.attributes.image === undefined ||
         message.attributes.token === undefined ||
-        message.attributes.clone_url === undefined) && (
-        message.attributes.instance === undefined)))
-        return Promise.reject("invalid workq or poolq message: " + String(message))
+        message.attributes.clone_url === undefined)
+        // invalid workq message; do not retry
+        return Promise.resolve("invalid workq message: " + String(message))
 
-    if (message.attributes.clone_url !== undefined)
-    {
-        // have work; pull instance from poolq
-        return queue_recv("poolq").
-            then(responses =>
+    // have work; pull instance from poolq
+    return queue_recv("poolq").
+        then(responses =>
+        {
+            response = responses[0]
+            if (response.received_messages === undefined ||
+                response.received_messages.length == 0)
             {
-                response = responses[0]
-                if (response.received_messages === undefined ||
-                    response.received_messages.length == 0)
-                    // no pool instance
-                    return Promise.resolve("no instance found")
+                // HACK: if we reject this message it will be retried immediately,
+                // and we will spin unproductively. Ideally the infrastructure would
+                // give us some control over when to be retried, but this is not the
+                // case. So let's try the next best thing: sleep for a while instead.
+                //
+                // See https://tinyurl.com/yb2vbwfd
+                //
+                // Remove this if PubSub implements retry controls.
+                sleep()
 
-                ack_id = response.received_messages[0].ack_id
-                poolmsg = response.received_messages[0].message
-                if (poolmsg.attributes === undefined ||
-                    poolmsg.attributes.instance === undefined)
-                    return Promise.reject("invalid poolq message: " + String(poolmsg))
+                // no pool instance; retry
+                return Promise.reject("no instance found")
+            }
 
-                    return builder_create(
-                        message.attributes.image,
-                        poolmsg.attributes.instance,
-                        message.attributes.token,
-                        message.attributes.clone_url,
-                        message.attributes.commit).
-                        then(_ =>
-                        {
-                            // acknowledge poolq message
-                            return queue_ack("poolq", ack_id)
-                        })
-            })
-    }
-    else if (message.attributes.instance !== undefined)
-    {
-        // have instance; pull work from workq
-        return queue_recv("workq").
-            then(responses =>
+            ack_id = response.received_messages[0].ack_id
+            poolmsg = response.received_messages[0].message
+            if (poolmsg.attributes === undefined ||
+                poolmsg.attributes.instance === undefined)
             {
-                response = responses[0]
-                if (response.received_messages === undefined ||
-                    response.received_messages.length == 0)
-                    // no work
-                    return Promise.resolve("no work found")
+                // invalid poolq message; acknowledge it and retry the workq message
+                queue_ack("poolq", ack_id)
+                return Promise.reject("invalid poolq message: " + String(poolmsg))
+            }
 
-                ack_id = response.received_messages[0].ack_id
-                workmsg = response.received_messages[0].message
-                if (workmsg.attributes === undefined ||
-                    workmsg.attributes.image === undefined ||
-                    workmsg.attributes.token === undefined ||
-                    workmsg.attributes.clone_url === undefined)
-                    return Promise.reject("invalid workq message: " + String(poolmsg))
-
-                return builder_create(
-                    workmsg.attributes.image,
-                    message.attributes.instance,
-                    workmsg.attributes.token,
-                    workmsg.attributes.clone_url,
-                    workmsg.attributes.commit).
-                    then(_ =>
-                    {
-                        // acknowledge workq message
-                        return queue_ack("workq", ack_id)
-                    })
-            })
+            // have builder instance name; create new builder
+            return builder_create(
+                message.attributes.image,
+                poolmsg.attributes.instance,
+                message.attributes.token,
+                message.attributes.clone_url,
+                message.attributes.commit).
+                then(_ =>
+                {
+                    // acknowledge poolq message
+                    return queue_ack("poolq", ack_id)
+                })
+        }).
+        catch(err =>
+        {
+            console.error(err)
+            throw err
+        })
     }
-    else
-        // oops!
-        return Promise.reject("internal error!")
-}
 
 exports.collector = (evt) =>
 {
+    // NO-Retry Background Function:
+    // - Promise.resolve means that message is accepted.
+    // - Promise.reject means error, but message is NOT retried.
+
     // received message from doneq
     message = evt.data
 

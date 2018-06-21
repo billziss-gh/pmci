@@ -133,15 +133,15 @@ Help="$Help
 function_deploy_http NAME ..."
 function_deploy_http()
 {
-    gcloud functions deploy --trigger-http "$@"
+    gcloud functions deploy --memory=128MB --trigger-http "$@"
 }
 
 Help="$Help
-function_deploy_queue QUEUE_NAME NAME ..."
-function_deploy_queue()
+function_deploy_topic QUEUE_NAME NAME ..."
+function_deploy_topic()
 {
     local queue_name=$1; shift
-    gcloud functions deploy --trigger-topic=$queue_name "$@"
+    gcloud functions deploy --memory=128MB --trigger-topic=$queue_name "$@"
 }
 
 Help="$Help
@@ -160,11 +160,25 @@ queue_create()
 }
 
 Help="$Help
+queue_topic_create QUEUE_NAME"
+queue_topic_create()
+{
+    gcloud pubsub topics create $1
+}
+
+Help="$Help
 queue_delete QUEUE_NAME"
 queue_delete()
 {
     gcloud pubsub topics delete $1
     gcloud pubsub subscriptions delete $1
+}
+
+Help="$Help
+queue_topic_delete QUEUE_NAME"
+queue_topic__delete()
+{
+    gcloud pubsub topics delete $1
 }
 
 Help="$Help
