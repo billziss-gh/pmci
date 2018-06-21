@@ -34,19 +34,29 @@ Help="$Help
 builder_done_sink_create SINK_NAME QUEUE_NAME"
 builder_done_sink_create()
 {
-    gcloud logging sinks create $1 pubsub.googleapis.com/projects/$PROJECT/topics/$2 \
+    local sink=$1
+    local queue=$2
+    gcloud logging sinks create $sink pubsub.googleapis.com/projects/$PROJECT/topics/$queue \
         --log-filter 'resource.type="gce_instance"
 logName="projects/'$PROJECT'/logs/compute.googleapis.com%2Factivity_log"
 jsonPayload.event_type:"GCE_OPERATION_DONE"
 (jsonPayload.event_subtype:"compute.instances.stop" OR jsonPayload.event_subtype:"compute.instances.guestTerminate" OR jsonPayload.event_subtype:"compute.instances.delete")'
-    # gcloud logging sinks describe $1
+    set -- $(gcloud logging sinks describe $sink | grep ^writerIdentity:)
+    gcloud projects add-iam-policy-binding $PROJECT \
+        --member=$2 \
+        --role=roles/pubsub.publisher
 }
 
 Help="$Help
 builder_done_sink_delete SINK_NAME"
 builder_done_sink_delete()
 {
-    gcloud logging sinks delete --quiet $1
+    local sink=$1
+    set -- $(gcloud logging sinks describe $sink | grep ^writerIdentity:)
+    gcloud projects remove-iam-policy-binding $PROJECT \
+        --member=$2 \
+        --role=roles/pubsub.publisher
+    gcloud logging sinks delete --quiet $sink
 }
 
 Help="$Help
