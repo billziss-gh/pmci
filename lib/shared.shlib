@@ -15,8 +15,6 @@ builder_create()
         --machine-type="$BUILDER_MACHINE_TYPE" \
         --min-cpu-platform="$BUILDER_MIN_CPU_PLATFORM" \
         --boot-disk-size="${BUILDER_BOOT_DISK_SIZE}GB" \
-        --network-tier=PREMIUM \
-        --subnet=default \
         --maintenance-policy=MIGRATE \
         --scopes=default,compute-rw,storage-rw \
         "$@"
@@ -60,6 +58,25 @@ builder_done_sink_delete()
 }
 
 Help="$Help
+builder_image_create SOURCE_DISK IMAGE_NAME"
+builder_image_create()
+{
+    local disk="$1"
+    local image="$2"
+    gcloud compute images create "$image" \
+        --source-disk="$disk" \
+        --source-disk-zone="$BUILDER_ZONE"
+}
+
+Help="$Help
+builder_image_delete IMAGE_NAME"
+builder_image_delete()
+{
+    local image="$1"
+    gcloud compute images delete "$image"
+}
+
+Help="$Help
 builder_name # works only within GCE"
 builder_name()
 {
@@ -69,6 +86,14 @@ builder_name()
         curl http://metadata.google.internal/computeMetadata/v1/instance/name \
             -H Metadata-Flavor:Google
     fi
+}
+
+Help="$Help
+builder_stop INSTANCE_NAMES"
+builder_stop()
+{
+    gcloud compute instances stop \
+        "$@"
 }
 
 Help="$Help
@@ -92,10 +117,10 @@ builder_work()
             commit=$(git rev-parse HEAD)
 
             local os=$(uname -s | tr A-Z a-z)
-            local ec=-1
             if [ -f .pmci/$os.sh ]; then
                 sh .pmci/$os.sh >/var/log/build.log 2>&1
-                ec=$?
+
+                local ec=$?
                 if [ $ec -eq 0 ]; then
                     echo >>/var/log/build.log
                     echo BUILD SUCCESS >>/var/log/build.log
@@ -115,6 +140,8 @@ builder_work()
                     srchost_post_status $srchost $user $repo $commit failure
                 fi
             fi
+
+            builder_stop --zone $BUILDER_ZONE $(builder_name)
         )
     fi
 }

@@ -38,9 +38,8 @@ else
     export PATH=/usr/local/go-custom/bin:$PATH
 
     # clone repo and build
+    # also stops builder if started with $BUILDER_ARG_CLONE_URL
     mkdir -p /tmp/repo
     cd /tmp/repo
     builder_work
-
-    # builder_delete $(builder_name)
 fi
