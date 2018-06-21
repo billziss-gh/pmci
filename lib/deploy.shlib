@@ -39,7 +39,7 @@ deploy_functions # deploy functions to Google Cloud"
 deploy_functions()
 {
     function_deploy_topic doneq collector --source="$ProgDir/controller"
-    function_deploy_topic workq dispatcher --source="$ProgDir/controller"
+    function_deploy_topic workq dispatcher --timeout=300s --retry --source="$ProgDir/controller"
     function_deploy_http listener --source="$ProgDir/controller"
 }
 

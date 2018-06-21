@@ -121,10 +121,14 @@ exports.dispatcher = (evt) =>
                 // See https://tinyurl.com/yb2vbwfd
                 //
                 // Remove this if PubSub implements retry controls.
-                sleep()
+                return new Promise(resolve => setTimeout(resolve, 60000)).
+                    then(_ =>
+                    {
+                        return Promise.reject("no instance found")
+                    })
 
                 // no pool instance; retry
-                return Promise.reject("no instance found")
+                //return Promise.reject("no instance found")
             }
 
             ack_id = response.received_messages[0].ack_id

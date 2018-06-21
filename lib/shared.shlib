@@ -176,7 +176,7 @@ queue_delete()
 
 Help="$Help
 queue_topic_delete QUEUE_NAME"
-queue_topic__delete()
+queue_topic_delete()
 {
     gcloud pubsub topics delete $1
 }
