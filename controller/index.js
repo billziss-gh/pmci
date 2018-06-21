@@ -119,6 +119,10 @@ exports.listener = (req, rsp) =>
     queue_post("workq", attributes).
         then(_ =>
         {
+            console.log("workq: posted work" +
+                " on " + req.query.image +
+                " for " + req.body.repository.clone_url +
+                " commit " + req.body.after)
             rsp.status(200).end()
         }).
         catch(err =>
