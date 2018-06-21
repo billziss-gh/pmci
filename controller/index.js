@@ -73,7 +73,7 @@ const vmconf =
             [
                 {
                     "key": "startup-script",
-                    "value": package.config.FREEBSD_STARTX,
+                    "value": package.config.FREEBSD_BUILDER_STARTX,
                 },
             ],
         },

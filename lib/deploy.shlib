@@ -8,21 +8,6 @@
 # in the License.txt file at the root of this project.
 
 Help="$Help
-generate # generate required files"
-generate()
-{
-    FREEBSD_STARTX=$(cat \
-        "$ProgDir/lib/config.shlib" \
-        "$ProgDir/lib/shared.shlib" \
-        "$ProgDir/builder/freebsd.startx" \
-    )
-    config_json FREEBSD_STARTX \
-        <"$ProgDir/controller/package.json" \
-        >"$ProgDir/controller/package.json.new"
-    mv "$ProgDir/controller/package.json.new" "$ProgDir/controller/package.json"
-}
-
-Help="$Help
 deploy # deploy to Google Cloud"
 deploy()
 {
@@ -31,16 +16,34 @@ deploy()
     queue_create poolq 300
     builder_done_sink_create done doneq
 
-    deploy_functions
+    deploy_controller
 }
 
 Help="$Help
-deploy_functions # deploy functions to Google Cloud"
-deploy_functions()
+deploy_controller # deploy controller to Google Cloud"
+deploy_controller()
 {
-    function_deploy_topic doneq collector --source="$ProgDir/controller"
-    function_deploy_topic workq dispatcher --timeout=300s --retry --source="$ProgDir/controller"
-    function_deploy_http listener --source="$ProgDir/controller"
+    rm -rf /tmp/generate.$$
+    mkdir /tmp/generate.$$
+    _prepare_controller_package
+    function_deploy_topic doneq collector --source=/tmp/generate.$$
+    function_deploy_topic workq dispatcher --timeout=300s --retry --source=/tmp/generate.$$
+    function_deploy_http listener --source=/tmp/generate.$$
+    rm -rf /tmp/generate.$$
+}
+
+_prepare_controller_package()
+{
+    cp -R "$ProgDir/controller"/* /tmp/generate.$$
+    local FREEBSD_BUILDER_STARTX=$(cat \
+        "$ProgDir/lib/config.shlib" \
+        "$ProgDir/lib/shared.shlib" \
+        "$ProgDir/builder/freebsd.startx" \
+    )
+    config_json FREEBSD_BUILDER_STARTX \
+        </tmp/generate.$$/package.json \
+        >/tmp/generate.$$/package.json.new
+    mv /tmp/generate.$$/package.json.new /tmp/generate.$$/package.json
 }
 
 Help="$Help

@@ -13,6 +13,7 @@ BUILDER_ZONE="us-central1-c"
 BUILDER_MACHINE_TYPE="f1-micro"
 BUILDER_MIN_CPU_PLATFORM="Intel Skylake"
 BUILDER_BOOT_DISK_SIZE="30"
+BUILDER_SERVICE_ACCOUNT="default"
 STORAGE_BUCKET_LOGS="pmci-logs"
 
 Help="$Help
@@ -20,6 +21,10 @@ config_json VARIABLES... # read stdin as JSON and update 'config' entry"
 config_json()
 {
     (
+        if [ "$BUILDER_SERVICE_ACCOUNT" == "default" ]; then
+            BUILDER_SERVICE_ACCOUNT="$(gcloud iam service-accounts list "--format=value(email)" | \
+                grep compute@developer.gserviceaccount.com)"
+        fi
         set -- \
             PROJECT \
             REGION \
@@ -27,6 +32,7 @@ config_json()
             BUILDER_MACHINE_TYPE \
             BUILDER_MIN_CPU_PLATFORM \
             BUILDER_BOOT_DISK_SIZE \
+            BUILDER_SERVICE_ACCOUNT \
             STORAGE_BUCKET_LOGS \
             "$@"
         for k in "$@"; do
