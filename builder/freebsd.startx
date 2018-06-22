@@ -11,8 +11,8 @@ exec >>/var/log/startx.log
 exec 2>&1
 
 echo ">>>>STARTX $(date +%Y-%m-%dT%H:%M:%S%z)"
-trap 'set +ex; echo "<<<<STARTX $(date +%Y-%m-%dT%H:%M:%S%z)"' EXIT
-set -ex
+trap 'set +x; echo "<<<<STARTX $(date +%Y-%m-%dT%H:%M:%S%z)"' EXIT
+set -x
 
 if [ -e /firstboot ]; then
     grep -q clear_tmp_enable /etc/rc.conf || echo 'clear_tmp_enable="YES"' >>/etc/rc.conf

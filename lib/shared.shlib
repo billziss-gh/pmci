@@ -110,7 +110,7 @@ builder_work()
             local repo=$(basename "$clone_url")
             repo="${repo%.*}"
 
-            git clone --depth 50 "$clone_url"
+            git clone "$clone_url"
             cd "$repo"
 
             [ -n "$commit" ] && git checkout "$commit"
