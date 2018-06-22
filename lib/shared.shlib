@@ -104,13 +104,12 @@ builder_work()
     local commit=$BUILDER_ARG_COMMIT
 
     if [ -n "$clone_url" ]; then
-        (
+        if git clone "$clone_url"; then
             local srchost=$(dirname $(dirname "$clone_url"))
             local user=$(basename $(dirname "$clone_url"))
             local repo=$(basename "$clone_url")
             repo="${repo%.*}"
 
-            git clone "$clone_url"
             cd "$repo"
 
             [ -n "$commit" ] && git checkout "$commit"
@@ -140,9 +139,9 @@ builder_work()
                     srchost_post_status $srchost $user $repo $commit failure
                 fi
             fi
+        fi
 
-            builder_stop --zone $BUILDER_ZONE $(builder_name)
-        )
+        builder_stop --zone $BUILDER_ZONE $(builder_name)
     fi
 }
 

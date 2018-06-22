@@ -113,6 +113,12 @@ exports.listener = (req, rsp) =>
         return
     }
 
+    if (req.body.after == "0000000000000000000000000000000000000000")
+    {
+        rsp.status(200).end()
+        return
+    }
+
     // post event to workq
     attributes =
     {
