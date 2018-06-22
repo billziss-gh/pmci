@@ -232,25 +232,26 @@ exports.collector = (evt) =>
         return Promise.reject("doneq: skip invalid message: " + String(message))
 
     message = JSON.parse(Buffer(message.data, "base64").toString()).jsonPayload
+    instance = message.resource.name
 
     switch (message.event_subtype)
     {
     case "compute.instances.stop":
     case "compute.instances.guestTerminate":
-        return zone.vm(message.resource.name).delete().
+        return zone.vm(instance).delete().
             then(_ =>
             {
-                console.log("builder: deleted " + message.resource.name)
+                console.log("builder: deleted " + instance)
             })
     case "compute.instances.delete":
         attributes =
         {
-            instance: message.resource.name,
+            instance: instance,
         }
         return queue_post("poolq", attributes).
             then(_ =>
             {
-                console.log("poolq: posted instance " + message.resource.name)
+                console.log("poolq: posted instance " + instance)
             })
     default:
         return Promise.reject("doneq: invalid message: unknown event_subtype: " + String(message))
