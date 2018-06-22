@@ -8,7 +8,7 @@
 # in the License.txt file at the root of this project.
 
 Help="$Help
-deploy # deploy to Google Cloud"
+deploy SECRET # deploy to Google Cloud"
 deploy()
 {
     queue_topic_create workq 300
@@ -16,19 +16,19 @@ deploy()
     queue_create poolq 300
     builder_done_sink_create done doneq
 
-    deploy_controller
+    deploy_controller "$1"
 
     # seed the pool
     queue_post poolq instance=builder0
 }
 
 Help="$Help
-deploy_controller # deploy controller to Google Cloud"
+deploy_controller SECRET # deploy controller to Google Cloud"
 deploy_controller()
 {
     rm -rf /tmp/generate.$$
     mkdir /tmp/generate.$$
-    _prepare_controller_package
+    _prepare_controller_package "$1"
     function_deploy_topic doneq collector --source=/tmp/generate.$$
     function_deploy_topic workq dispatcher --timeout=300s --retry --source=/tmp/generate.$$
     function_deploy_http listener --source=/tmp/generate.$$
@@ -38,12 +38,13 @@ deploy_controller()
 _prepare_controller_package()
 {
     cp -R "$ProgDir/controller"/* /tmp/generate.$$
+    local SECRET="$1"
     local FREEBSD_BUILDER_STARTX=$(cat \
         "$ProgDir/lib/config.shlib" \
         "$ProgDir/lib/shared.shlib" \
         "$ProgDir/builder/freebsd.startx" \
     )
-    config_json FREEBSD_BUILDER_STARTX \
+    config_json SECRET FREEBSD_BUILDER_STARTX \
         </tmp/generate.$$/package.json \
         >/tmp/generate.$$/package.json.new
     mv /tmp/generate.$$/package.json.new /tmp/generate.$$/package.json

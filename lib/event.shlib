@@ -8,12 +8,13 @@
 # in the License.txt file at the root of this project.
 
 Help="$Help
-github_push IMAGE USER/REPO [COMMIT] # requires PMCI/GitHub token in keyring"
+github_push IMAGE USER/REPO [COMMIT] # requires GitHub secret and token in keyring"
 github_push()
 {
+    local secret="$(keyring get PMCI secret)"
+    local token="$(keyring get PMCI github)"
     local image="$1"
     local clone_url="https://github.com/$2.git"
-    local token=$(keyring get PMCI GitHub)
 
     local data
     if [ -n "$3" ]; then
@@ -32,7 +33,7 @@ github_push()
     fi
 
     curl -X POST \
-        "https://$REGION-$PROJECT.cloudfunctions.net/listener?image=$image&token=$token" \
+        "https://$REGION-$PROJECT.cloudfunctions.net/listener?secret=$secret&image=$image&token=$token" \
         -H "Content-type: application/json" \
         -d "$data"
     echo

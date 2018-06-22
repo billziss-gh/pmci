@@ -86,7 +86,12 @@ const subcli = new pubsub.v1.SubscriberClient()
 
 exports.listener = (req, rsp) =>
 {
-    // check X-Hub-Signature to ensure that GitHub is accessing us
+    // check if the request has our secret
+    if (req.query.secret != package.config.SECRET)
+    {
+        rsp.status(400).send("You don't know the password!")
+        return
+    }
 
     if (req.query.image === undefined ||
         req.query.token === undefined)
