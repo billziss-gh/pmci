@@ -4,7 +4,7 @@ skinparam BoxPadding 40
 participant "<img:github.png>" as GitHub
 box "Controller"
     participant Listener
-    participant Scheduler
+    participant Dispatcher
     participant Collector
 end box
 participant "Builder\nPool" as Pool
@@ -13,17 +13,18 @@ GitHub ->> Listener: push(repo)
 activate Listener
 deactivate Listener
 loop retry delivery while\nno builder available
-    Listener ->> Scheduler: work(repo)
-    activate Scheduler
+    Listener ->> Dispatcher: work(repo)
+    activate Dispatcher
 end
-Pool ->> Scheduler: name
+Pool ->> Dispatcher: name
 create builder
-Scheduler -> builder: new(name, repo)
+Dispatcher -> builder: new(name, repo)
 activate builder
-deactivate Scheduler
+deactivate Dispatcher
 builder -> builder: build(repo)
 activate builder #Salmon
 deactivate builder
+builder -> "Build\nLogs": store(build_log)
 builder ->> GitHub: status
 builder ->> Collector: done(name)
 destroy builder

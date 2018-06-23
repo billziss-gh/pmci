@@ -1,0 +1,54 @@
+skinparam componentStyle uml2
+
+artifact controller
+together {
+    artifact startx
+    artifact image
+}
+
+together {
+    cloud "<img:github.png>" as GitHub
+
+    node "Cloud Functions" {
+        component Controller {
+            component Listener
+            component Dispatcher
+            component Collector
+        }
+    }
+
+    node "Compute Engine" {
+        node builder
+    }
+}
+
+together {
+    queue workq
+    component "Builder\nPool" {
+        queue poolq
+    }
+    queue doneq
+    entity "Logging Sink" as done
+}
+
+database Storage {
+    database "Build\nLogs" as Logs
+}
+
+controller .down.> Listener: <<manifest>>
+controller .down.> Dispatcher: <<manifest>>
+controller .down.> Collector: <<manifest>>
+
+image .down.> builder: <<deploy>>
+startx .down.> builder: <<deploy>>
+
+GitHub -right- Listener: HTTP
+Listener -down-> workq: publish
+Dispatcher <-down- workq: push
+Dispatcher <-down- poolq: pull
+Collector -down-> poolq: publish
+Collector <-down- doneq: push
+
+done -left-> doneq: publish
+
+builder -right- Logs
