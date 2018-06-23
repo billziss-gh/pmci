@@ -62,6 +62,25 @@ Instructions:
     - Content-type: `application/json`
     - "Just the `push` event."
 
+- Add a shell script named `.pmci/freebsd.sh` to your project. This script will be run by PMCI on every push. For example, here is my [cgofuse](https://github.com/billziss-gh/cgofuse) script:
+    ```shell
+    set -ex
+
+    # kernel: load FUSE and allow non-root access
+    kldload fuse
+    sysctl vfs.usermount=1
+    chmod 666 /dev/fuse
+
+    # install: FUSE
+    pkg install -y fusefs-libs
+
+    # cgofuse: build and test
+    mkdir -p /tmp/go/github.com/billziss-gh
+    ln -s /tmp/repo/cgofuse /tmp/go/github.com/billziss-gh/cgofuse
+    cd /tmp/go/github.com/billziss-gh/cgofuse
+    go test -v ./fuse
+    ```
+
 - You should now have working FreeBSD builds! Try pushing something into your GitHub project.
 
 - To undeploy PMCI:
