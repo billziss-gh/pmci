@@ -12,7 +12,7 @@ A CI solution listens for "commit" (or more usually "push") events, builds the a
 
 Poor Man's CI consists of the following components and their interactions:
 
-- **`Controller`**: Controls the overall process of accepting GitHub `push` events and starting builds. The `Controller` runs in the Cloud Functions environment and is manifested by the files in the `controller` source directory. It consists of the following components:
+- **`Controller`**: Controls the overall process of accepting GitHub `push` events and starting builds. The `Controller` runs in the Cloud Functions environment and is implemented by the files in the `controller` source directory. It consists of the following components:
     - **`Listener`**: Listens for GitHub `push` events and posts them as `work` messages to the `workq` PubSub.
     - **`Dispatcher`**: Receives `work` messages from the `workq` PubSub and a free instance `name` from the `Builder Pool`. It instantiates a `builder` instance named `name` in the Compute Engine environment and passes it the link of a repository to build.
     - **`Collector`**: Receives `done` messages from the `doneq` PubSub and posts the freed instance `name` back to the `Builder Pool`.
