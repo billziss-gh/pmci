@@ -105,9 +105,10 @@ builder_work()
 
     if [ -n "$clone_url" ]; then
         if git clone "$clone_url"; then
-            local srchost=$(dirname $(dirname "$clone_url"))
-            local user=$(basename $(dirname "$clone_url"))
-            local repo=$(basename "$clone_url")
+            local srchostpath=${clone_url#*//}
+            local srchost=$(dirname $(dirname "$srchostpath"))
+            local user=$(basename $(dirname "$srchostpath"))
+            local repo=$(basename "$srchostpath")
             repo="${repo%.*}"
 
             cd "$repo"
@@ -120,18 +121,42 @@ builder_work()
                 sh .pmci/$os.sh >/var/log/build.log 2>&1
 
                 local ec=$?
+                local badge
                 if [ $ec -eq 0 ]; then
                     echo >>/var/log/build.log
                     echo BUILD SUCCESS >>/var/log/build.log
+                    badge=build-success
                 else
                     echo >>/var/log/build.log
                     echo BUILD FAILURE >>/var/log/build.log
+                    badge=build-failure
                 fi
+
+                echo "<head><meta http-equiv='refresh' content='0; url=http://storage.googleapis.com/$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/$commit.log'></head>" >/tmp/build.html
 
                 gsutil \
                     -h "Content-type:text/plain" \
                     -h "Content-Disposition" \
-                    cp -a public-read /var/log/build.log gs://$STORAGE_BUCKET_LOGS/$commit.log
+                    cp \
+                    -a public-read \
+                    /var/log/build.log \
+                    gs://$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/$commit.log
+
+                gsutil \
+                    -h "Content-type:text/html" \
+                    -h "Content-Disposition" \
+                    cp \
+                    -a public-read \
+                    /tmp/build.html \
+                    gs://$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/build.html
+
+                gsutil \
+                    -h "Content-type:image/svg+xml" \
+                    -h "Content-Disposition" \
+                    cp \
+                    -a public-read \
+                    gs://$STORAGE_BUCKET/$badge.svg \
+                    gs://$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/badge.svg
 
                 if [ $ec -eq 0 ]; then
                     srchost_post_status $srchost $user $repo $commit success
@@ -159,7 +184,8 @@ srchost_post_status()
         -d "{ \
 \"context\": \"continuous-integration/pmci\", \
 \"state\": \"$status\", \
-\"target_url\": \"http://storage.googleapis.com/$STORAGE_BUCKET_LOGS/$commit.log\" \
+\"target_url\": \
+    \"http://storage.googleapis.com/$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/$commit.log\" \
 }" \
         --retry 5 \
         --retry-max-time 30

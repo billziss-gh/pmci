@@ -29,7 +29,7 @@ if [ -e /firstboot ]; then
 
     # install: custom Go
     # (fixes signal handling bug; remove when Go 1.11 is available)
-    gsutil cp gs://pmci/go-custom.freebsd-amd64.tar.xz /tmp/go-custom.tar.xz
+    gsutil cp gs://$STORAGE_BUCKET/go-custom.freebsd-amd64.tar.xz /tmp/go-custom.tar.xz
     tar -xJf /tmp/go-custom.tar.xz -C /usr/local
     rm /tmp/go-custom.tar.xz
 else

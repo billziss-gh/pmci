@@ -66,18 +66,17 @@ Instructions:
     ```shell
     set -ex
 
-    # kernel: load FUSE and allow non-root access
+    # FUSE
     kldload fuse
-    sysctl vfs.usermount=1
-    chmod 666 /dev/fuse
-
-    # install: FUSE
     pkg install -y fusefs-libs
 
     # cgofuse: build and test
-    mkdir -p /tmp/go/github.com/billziss-gh
-    ln -s /tmp/repo/cgofuse /tmp/go/github.com/billziss-gh/cgofuse
-    cd /tmp/go/github.com/billziss-gh/cgofuse
+    export GOPATH=/tmp/go
+    mkdir -p /tmp/go/src/github.com/billziss-gh
+    cp -R /tmp/repo/cgofuse /tmp/go/src/github.com/billziss-gh
+    cd /tmp/go/src/github.com/billziss-gh/cgofuse
+    go build ./examples/memfs
+    go build ./examples/passthrough
     go test -v ./fuse
     ```
 
@@ -94,7 +93,7 @@ Instructions:
 
 - Use a larger HDD or an SSD.
 
-- Use a custom image that has already performed `firstboot`. The default FreeBSD image performs a system update and other expensive work when booted for the first time (i.e. the `/firstboot` file exists). An image that has already done these tests boots much faster.
+- Use a custom image that has already performed `firstboot`. The default FreeBSD image performs a system update and other expensive work when booted for the first time (i.e. the `/firstboot` file exists). An image that has already done this work boots much faster.
     ```
     $ ./pmci freebsd_builder_create builder0
     # wait until builder has fully booted; it will do so twice;
@@ -105,6 +104,20 @@ Instructions:
     # now modify your controller/index.js file to point to your custom freebsd-builder image
     $ ./pmci deploy SECRET
     ```
+
+### BADGES
+
+PMCI supports status badges that show the last status of your build. Use them as follows in Markdown:
+
+Badge:
+```markdown
+![PMCI](http://storage.googleapis.com/PROJECT-logs/github.com/USER/REPO/badge.svg)
+```
+
+Badge that links to the build log:
+```markdown
+[![PMCI](http://storage.googleapis.com/PROJECT-logs/github.com/USER/REPO/badge.svg)](http://storage.googleapis.com/PROJECT-logs/github.com/USER/REPO/build.html)
+```
 
 ## BUGS
 
