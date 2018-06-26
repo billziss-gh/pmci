@@ -137,6 +137,7 @@ builder_work()
                 gsutil \
                     -h "Content-type:text/plain" \
                     -h "Content-Disposition" \
+                    -h "Cache-Control:public,max-age=3600" \
                     cp \
                     -a public-read \
                     /var/log/build.log \
@@ -145,6 +146,7 @@ builder_work()
                 gsutil \
                     -h "Content-type:text/html" \
                     -h "Content-Disposition" \
+                    -h "Cache-Control:private" \
                     cp \
                     -a public-read \
                     /tmp/build.html \
@@ -153,6 +155,7 @@ builder_work()
                 gsutil \
                     -h "Content-type:image/svg+xml" \
                     -h "Content-Disposition" \
+                    -h "Cache-Control:private" \
                     cp \
                     -a public-read \
                     gs://$STORAGE_BUCKET/$badge.svg \
