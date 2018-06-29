@@ -2,7 +2,7 @@
 
 Poor Man's CI (PMCI - Poor Man's Continuous Integration) is a collection of scripts that taken together work as a simple CI solution that runs on Google Cloud. While there are many advanced hosted CI systems today, and many of them are free for open source projects, none of them seem to offer a solution for the BSD operating systems (FreeBSD, NetBSD, OpenBSD, etc.)
 
-The architecture of Poor Man's CI is system agnostic. However in its first implementation provided in this repository the only supported system is FreeBSD. Support for additional systems is possible.
+The architecture of Poor Man's CI is system agnostic. However in the implementation provided in this repository the only supported systems are FreeBSD and NetBSD. Support for additional systems is possible.
 
 Poor Man's CI runs on the Google Cloud. It is possible to set it up so that the service fits within the Google Cloud ["Always Free"](https://cloud.google.com/free/docs/always-free-usage-limits) limits. In doing so the provided CI is not only hosted, but is also free! (Disclaimer: I am not affiliated with Google and do not otherwise endorse their products.)
 
@@ -57,12 +57,13 @@ Instructions:
 - Obtain your personal access `TOKEN` by visiting github.com > Account > Settings > Developer settings > Personal access tokens.
 
 - On every project you want to use PMCI go to github.com > Project > Settings > Webhooks > Add Webhook.
-    - URL: `https://REGION-PROJECT.cloudfunctions.net/listener?secret=SECRET&image=freebsd&token=TOKEN`
-        - Update `REGION` and `PROJECT` accordingly.
+    - URL: `https://REGION-PROJECT.cloudfunctions.net/listener?secret=SECRET&image=IMAGE&token=TOKEN`
+        - Set `REGION` and `PROJECT` accordingly.
+        - Set `IMAGE` to `freebsd` or `netbsd`.
     - Content-type: `application/json`
     - "Just the `push` event."
 
-- Add a shell script named `.pmci/freebsd.sh` to your project. This script will be run by PMCI on every push. For example, here is my [cgofuse](https://github.com/billziss-gh/cgofuse) script:
+- Add a shell script named `.pmci/IMAGE.sh` (where `IMAGE` is `freebsd` or `netbsd`) to your project. This script will be run by PMCI on every push. For example, here is my [cgofuse](https://github.com/billziss-gh/cgofuse) script for FreeBSD:
     ```shell
     set -ex
 
@@ -80,20 +81,20 @@ Instructions:
     go test -v ./fuse
     ```
 
-- You should now have working FreeBSD builds! Try pushing something into your GitHub project.
+- You should now have working FreeBSD and/or NetBSD builds! Try pushing something into your GitHub project.
 
 - To undeploy PMCI:
     ```
     $ ./pmci undeploy
     ```
 
-**NOTE**: The default deployment uses a single builder instance of `f1-micro` with a 30GB HDD created from the FreeBSD project's `freebsd-11-1-release-amd64` image. This fits within the "Always Free" tier and is therefore free. However it is also extremely slow and can even run out of memory when compiling bigger projects (e.g. it runs out of memory 1 out of 5 times when compiling Go in June 2018). Here are some ways to improve the performance:
+**NOTE**: The default deployment uses a single builder instance of `f1-micro` with a 30GB HDD. This fits within the "Always Free" tier and is therefore free. However it is also extremely slow and can even run out of memory when compiling bigger projects (e.g. it runs out of memory 1 out of 5 times when compiling Go in June 2018). Here are some ways to improve the performance:
 
 - Use a machine type that is faster and has more memory, such as `n1-standard-1`.
 
 - Use a larger HDD or an SSD.
 
-- Use a custom image that has already performed `firstboot`. The default FreeBSD image performs a system update and other expensive work when booted for the first time (i.e. the `/firstboot` file exists). An image that has already done this work boots much faster.
+- FreeBSD only: Use a custom image that has already performed `firstboot`. The default FreeBSD image `freebsd-11-1-release-amd64` performs a system update and other expensive work when booted for the first time (i.e. the `/firstboot` file exists). An image that has already done this work boots much faster.
     ```
     $ ./pmci freebsd_builder_create builder0
     # wait until builder has fully booted; it will do so twice;
@@ -111,12 +112,12 @@ PMCI supports status badges that show the last status of your build. Use them as
 
 Badge:
 ```markdown
-![PMCI](http://storage.googleapis.com/PROJECT-logs/github.com/USER/REPO/badge.svg)
+![PMCI](http://storage.googleapis.com/PROJECT-logs/github.com/USER/REPO/IMAGE/badge.svg)
 ```
 
 Badge that links to the build log:
 ```markdown
-[![PMCI](http://storage.googleapis.com/PROJECT-logs/github.com/USER/REPO/badge.svg)](http://storage.googleapis.com/PROJECT-logs/github.com/USER/REPO/build.html)
+[![PMCI](http://storage.googleapis.com/PROJECT-logs/github.com/USER/REPO/IMAGE/badge.svg)](http://storage.googleapis.com/PROJECT-logs/github.com/USER/REPO/IMAGE/build.html)
 ```
 
 ## BUGS
