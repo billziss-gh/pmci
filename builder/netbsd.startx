@@ -1,0 +1,40 @@
+# netbsd.startx
+#
+# Copyright 2018 Bill Zissimopoulos
+
+# This file is part of "Poor Man's CI".
+#
+# It is licensed under the BSD license. The full license text can be found
+# in the License.txt file at the root of this project.
+
+exec >>/var/log/startx.log
+exec 2>&1
+
+echo ">>>>STARTX $(date +%Y-%m-%dT%H:%M:%S%z)"
+trap 'set +x; echo "<<<<STARTX $(date +%Y-%m-%dT%H:%M:%S%z)"' EXIT
+set -x
+
+export PATH=/usr/pkg/bin:/usr/pkg/sbin:$PATH
+if [ ! -e /firstboot.done ]; then
+    pkg_add mozilla-rootcerts
+    mozilla-rootcerts install
+
+    pkg_add py27-sqlite3
+    pkg_add py27-google-cloud-sdk
+    ln -s /usr/pkg/bin/python2.7 /usr/pkg/bin/python
+    ln -s /usr/pkg/py27-google-cloud-sdk/bin/gcloud /usr/pkg/bin
+    ln -s /usr/pkg/py27-google-cloud-sdk/bin/gsutil /usr/pkg/bin
+    gcloud components update --quiet
+
+    pkg_add git
+    pkg_add go
+
+    touch /firstboot.done
+    reboot
+else
+    # clone repo and build
+    # also stops builder if started with $BUILDER_ARG_CLONE_URL
+    mkdir -p /tmp/repo
+    cd /tmp/repo
+    builder_work
+fi

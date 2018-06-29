@@ -19,7 +19,8 @@ deploy()
     deploy_controller "$1"
 
     # seed the pool
-    queue_post poolq instance=builder0
+    queue_post poolq instance=builder0 >/dev/null
+    queue_post poolq instance=builder1 >/dev/null
 }
 
 Help="$Help
@@ -38,13 +39,19 @@ deploy_controller()
 _prepare_controller_package()
 {
     cp -R "$ProgDir/controller"/* /tmp/generate.$$
-    local SECRET="$1"
+    local SECRET="${1:-$(keyring get PMCI secret)}"
     local FREEBSD_BUILDER_STARTX=$(cat \
         "$ProgDir/lib/config.shlib" \
         "$ProgDir/lib/shared.shlib" \
         "$ProgDir/builder/freebsd.startx" \
     )
-    config_json SECRET FREEBSD_BUILDER_STARTX \
+    local NETBSD_BUILDER_STARTX=$(cat \
+        "$ProgDir/lib/config.shlib" \
+        "$ProgDir/lib/shared.shlib" \
+        "$ProgDir/builder/netbsd.startx" \
+    )
+    config_json SECRET \
+        FREEBSD_BUILDER_STARTX NETBSD_BUILDER_STARTX \
         </tmp/generate.$$/package.json \
         >/tmp/generate.$$/package.json.new
     mv /tmp/generate.$$/package.json.new /tmp/generate.$$/package.json

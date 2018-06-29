@@ -34,7 +34,8 @@ builder_done_sink_create()
 {
     local sink=$1
     local queue=$2
-    gcloud logging sinks create $sink pubsub.googleapis.com/projects/$PROJECT/topics/$queue \
+    gcloud logging sinks create --no-user-output-enabled \
+        $sink pubsub.googleapis.com/projects/$PROJECT/topics/$queue \
         --log-filter 'resource.type="gce_instance"
 logName="projects/'$PROJECT'/logs/compute.googleapis.com%2Factivity_log"
 jsonPayload.event_type:"GCE_OPERATION_DONE"
@@ -42,7 +43,7 @@ jsonPayload.event_type:"GCE_OPERATION_DONE"
     set -- $(gcloud logging sinks describe $sink | grep ^writerIdentity:)
     gcloud projects add-iam-policy-binding $PROJECT \
         --member=$2 \
-        --role=roles/pubsub.publisher
+        --role=roles/pubsub.publisher >/dev/null
 }
 
 Help="$Help
@@ -53,7 +54,7 @@ builder_done_sink_delete()
     set -- $(gcloud logging sinks describe $sink | grep ^writerIdentity:)
     gcloud projects remove-iam-policy-binding $PROJECT \
         --member=$2 \
-        --role=roles/pubsub.publisher
+        --role=roles/pubsub.publisher >/dev/null
     gcloud logging sinks delete --quiet $sink
 }
 
@@ -132,7 +133,7 @@ builder_work()
                     badge=build-failure
                 fi
 
-                echo "<head><meta http-equiv='refresh' content='0; url=http://storage.googleapis.com/$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/$commit.log'></head>" >/tmp/build.html
+                echo "<head><meta http-equiv='refresh' content='0; url=http://storage.googleapis.com/$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/$os/$commit.log'></head>" >/tmp/build.html
 
                 gsutil \
                     -h "Content-type:text/plain" \
@@ -141,7 +142,7 @@ builder_work()
                     cp \
                     -a public-read \
                     /var/log/build.log \
-                    gs://$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/$commit.log
+                    gs://$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/$os/$commit.log
 
                 gsutil \
                     -h "Content-type:text/html" \
@@ -150,7 +151,7 @@ builder_work()
                     cp \
                     -a public-read \
                     /tmp/build.html \
-                    gs://$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/build.html
+                    gs://$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/$os/build.html
 
                 gsutil \
                     -h "Content-type:image/svg+xml" \
@@ -159,36 +160,38 @@ builder_work()
                     cp \
                     -a public-read \
                     gs://$STORAGE_BUCKET/$badge.svg \
-                    gs://$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/badge.svg
+                    gs://$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/$os/badge.svg
 
                 if [ $ec -eq 0 ]; then
-                    srchost_post_status $srchost $user $repo $commit success
+                    srchost_post_status $srchost $user $repo $os $commit success
                 else
-                    srchost_post_status $srchost $user $repo $commit failure
+                    srchost_post_status $srchost $user $repo $os $commit failure
                 fi
             fi
         fi
 
+        # shutdown -p now
         builder_stop --zone $BUILDER_ZONE $(builder_name)
     fi
 }
 
 Help="$Help
-srchost_post_status SRCHOST USER REPO COMMIT STATUS # works only within GCE"
+srchost_post_status SRCHOST USER REPO OS COMMIT STATUS # works only within GCE"
 srchost_post_status()
 {
     local srchost=$1
     local user=$2
     local repo=$3
-    local commit=$4
-    local status=$5
+    local os=$4
+    local commit=$5
+    local status=$6
     curl -s -S -X POST https://api.github.com/repos/$user/$repo/statuses/$commit \
         -H "Authorization: token $BUILDER_ARG_SRCHOST_TOKEN" \
         -d "{ \
-\"context\": \"continuous-integration/pmci\", \
+\"context\": \"continuous-integration/pmci/$os\", \
 \"state\": \"$status\", \
 \"target_url\": \
-    \"http://storage.googleapis.com/$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/$commit.log\" \
+    \"http://storage.googleapis.com/$STORAGE_BUCKET_LOGS/$srchost/$user/$repo/$os/$commit.log\" \
 }" \
         --retry 5 \
         --retry-max-time 30
@@ -198,7 +201,7 @@ Help="$Help
 function_deploy_http NAME ..."
 function_deploy_http()
 {
-    gcloud functions deploy --memory=128MB --trigger-http "$@"
+    gcloud functions deploy --memory=128MB --trigger-http "$@" >/dev/null
 }
 
 Help="$Help
@@ -206,7 +209,7 @@ function_deploy_topic QUEUE_NAME NAME ..."
 function_deploy_topic()
 {
     local queue_name=$1; shift
-    gcloud functions deploy --memory=128MB --trigger-topic=$queue_name "$@"
+    gcloud functions deploy --memory=128MB --trigger-topic=$queue_name "$@" >/dev/null
 }
 
 Help="$Help
@@ -258,6 +261,13 @@ queue_recv QUEUE_NAME"
 queue_recv()
 {
     gcloud pubsub subscriptions pull $1 --auto-ack "--format=value(message.attributes)"
+}
+
+Help="$Help
+queue_peek QUEUE_NAME"
+queue_peek()
+{
+    gcloud pubsub subscriptions pull $1 "--format=value(message.attributes)"
 }
 
 version()

@@ -79,6 +79,64 @@ const vmconf =
             ],
         },
     },
+    "netbsd":
+    {
+        "machineType": package.config.BUILDER_MACHINE_TYPE,
+        "minCpuPlatform": package.config.BUILDER_MIN_CPU_PLATFORM,
+        "disks":
+        [
+            {
+                "boot": true,
+                "initializeParams":
+                {
+                    "sourceImage": "https://www.googleapis.com/compute/v1/" +
+                        "projects/" + project + "/global/images/netbsd-builder",
+                    "diskSizeGb": package.config.BUILDER_DISK_SIZE,
+                },
+                "autoDelete": true,
+            },
+        ],
+        "networkInterfaces":
+        [
+            {
+                "accessConfigs":
+                [
+                    {
+                        "type": "ONE_TO_ONE_NAT",
+                        "name": "External NAT",
+                    },
+                ],
+            },
+        ],
+        "serviceAccounts":
+        [
+            {
+                "email": package.config.BUILDER_SERVICE_ACCOUNT,
+                "scopes":
+                [
+                    "https://www.googleapis.com/auth/compute",
+                    "https://www.googleapis.com/auth/devstorage.read_only",
+                    "https://www.googleapis.com/auth/devstorage.read_write",
+                    "https://www.googleapis.com/auth/logging.write",
+                    "https://www.googleapis.com/auth/monitoring.write",
+                    "https://www.googleapis.com/auth/pubsub",
+                    "https://www.googleapis.com/auth/service.management.readonly",
+                    "https://www.googleapis.com/auth/servicecontrol",
+                    "https://www.googleapis.com/auth/trace.append",
+                ],
+            },
+        ],
+        "metadata":
+        {
+            "items":
+            [
+                {
+                    "key": "startup-script",
+                    "value": package.config.NETBSD_BUILDER_STARTX,
+                },
+            ],
+        },
+    },
 }
 
 const pubcli = new pubsub.v1.PublisherClient()

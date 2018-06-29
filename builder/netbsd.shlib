@@ -1,0 +1,32 @@
+# netbsd.shlib
+#
+# Copyright 2018 Bill Zissimopoulos
+
+# This file is part of "Poor Man's CI".
+#
+# It is licensed under the BSD license. The full license text can be found
+# in the License.txt file at the root of this project.
+
+Help="$Help
+netbsd_builder_create INSTANCE_NAMES BUILDER_ARG_NAME=VALUE"
+netbsd_builder_create()
+{
+    local name="$1"; shift
+    rm -f /tmp/startx.$$
+    for a in "$@"; do
+        echo "$a" >>/tmp/startx.$$
+    done
+    cat \
+        "$ProgDir/lib/config.shlib" \
+        "$ProgDir/lib/shared.shlib" \
+        "$ProgDir/builder/netbsd.startx" \
+        >>/tmp/startx.$$
+    builder_create \
+        --image-project=poor-mans-ci \
+        --image=netbsd-builder \
+        --metadata-from-file=startup-script=/tmp/startx.$$ \
+        "$name"
+    local ec=$?
+    rm -f /tmp/startx.$$
+    return $ec
+}
