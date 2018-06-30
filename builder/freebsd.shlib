@@ -24,6 +24,7 @@ freebsd_builder_create()
     builder_create \
         --image-project=freebsd-org-cloud-dev \
         --image=freebsd-11-1-release-amd64 \
+        --boot-disk-size="${BUILDER_BOOT_DISK_SIZE}GB" \
         --metadata-from-file=startup-script=/tmp/startx.$$ \
         "$name"
     local ec=$?

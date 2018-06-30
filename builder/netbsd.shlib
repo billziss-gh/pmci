@@ -24,6 +24,7 @@ netbsd_builder_create()
     builder_create \
         --image-project=poor-mans-ci \
         --image=netbsd-builder \
+        --boot-disk-size="10GB" \
         --metadata-from-file=startup-script=/tmp/startx.$$ \
         "$name"
     local ec=$?

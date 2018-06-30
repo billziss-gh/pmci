@@ -14,7 +14,6 @@ builder_create()
     gcloud beta compute instances create \
         --machine-type="$BUILDER_MACHINE_TYPE" \
         --min-cpu-platform="$BUILDER_MIN_CPU_PLATFORM" \
-        --boot-disk-size="${BUILDER_BOOT_DISK_SIZE}GB" \
         --maintenance-policy=MIGRATE \
         --scopes=default,compute-rw,storage-rw \
         "$@"
