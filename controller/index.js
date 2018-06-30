@@ -31,8 +31,8 @@ const vmconf =
                 "initializeParams":
                 {
                     "sourceImage": "https://www.googleapis.com/compute/v1/" +
-                        "projects/freebsd-org-cloud-dev/global/images/freebsd-11-1-release-amd64",
-                        // "projects/" + project + "/global/images/freebsd-builder",
+                        //"projects/freebsd-org-cloud-dev/global/images/freebsd-11-1-release-amd64",
+                        "projects/" + project + "/global/images/freebsd-builder",
                     "diskSizeGb": package.config.BUILDER_DISK_SIZE,
                 },
                 "autoDelete": true,
