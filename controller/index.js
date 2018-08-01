@@ -298,6 +298,9 @@ exports.collector = (evt) =>
     message = JSON.parse(Buffer(message.data, "base64").toString()).jsonPayload
     instance = message.resource.name
 
+    if (!instance.startsWith("builder"))
+        return Promise.resolve("doneq: ignoring non-builder instance " + instance)
+
     switch (message.event_subtype)
     {
     case "compute.instances.stop":
